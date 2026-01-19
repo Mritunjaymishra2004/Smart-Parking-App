@@ -1,0 +1,332 @@
+                                       ##** Notes **##
+
+1st option create virtual enviroment  ---> py -m venv .venv
+                                                                            [** Always XYZ are file Names ***]
+
+ But use here (uv) 
+     instalation prosses (uv) --> pip install uv  &  pipx install uv   --> any one option choose to download
+
+                        ** Why use (uv) because this is An Extremely fast Python package installer and resolver, written in Rust. ****
+12
+then create virtual Environment --> uv venv
+
+To activate the vertual environment  --->  .venv\Scripts\activate
+
+    ** How to deactivate vertual enviroment only type --> deactivate and Press Enter buttom **
+
+To install a package into the virtul enviroment any things then install this type
+
+uv pio install Django  --> install this
+{examples
+uv pip install flask
+uv pip install -r requirements.txt
+uv pip install -e .
+uv pip install "packege @ ."
+uv pip install "flask[dotenv]"
+}
+
+How to create any Project --> django-admin startproject XYZ    your project name paste here XYZ.
+
+create app 1st cd XYZ
+   2nd connect manage.py file 
+    then 3rd create app --> python manage.py startapp XYZ
+
+//**  After completation create app go mother file setting and add file name in INSTALLED_APPS
+  first create a folder templates than create a file same name of project name
+       then open file and click (ctrl + ,) then move setting Include Langauages and add items  
+        then cheq urls file are avaliable and not avaliable not available then create file and copy code in mother file and paste and add mother urls file path of project
+          And Add uper MIDDLEWARE   1. TAILWIND_APP_NAME = 'theme' , 2. INTERNAL_IPS = ['127.0.0.1'] , 3.  **//
+
+**
+Work Flow 
+
+       User ----> res  ---->  urls.py  --->  views.py
+                                               /
+                                              /
+               res <----------------         /
+                                      \     /
+                                       \   /
+                                        \ /   
+
+move on the project then create a File --> views.py  (This file name is permanent not any name sutable for this file)
+
+
+**+
+Install Package --> pip install django-tailwind
+               pip install 'django-tailwind[reload]'
+
+               ** How to start tailwind ---> python manage.py tailwind init // python manage.py tailwind start
+
+**//  Install pip 
+       python -m ensure-4.2.0pip --upgrade
+       python -m install --upgrade pip
+
+
+
+File run 
+    cd Django
+      Virtual enviroment activate ---->  .venv\Scripts\Activate.ps1    other wise --> .venv/bin/activate
+               python manage.py runserver
+
+
+
+
+
+Username (leave blank to use 'dell'): Mritunjay
+Email address: mritunjay@gmail.com
+Password: Asd@12345
+
+
+**
+
+
+STEP 1: Install required packages
+pip install channels daphne
+
+
+(Optional for production)
+
+pip install channels-redis
+
+
+
+Start backend server (IMPORTANT)
+
+❌ DO NOT USE
+
+python manage.py runserver
+
+
+✅ USE THIS
+
+daphne backend.asgi:application
+
+daphne -p 8000 backend.asgi:application
+
+
+
+admin
+admin@gmail.com
+admin123
+Asd@123
+
+
+
+        
+
+
+frontend/
+│
+├── index.html
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+├── postcss.config.js
+│
+└── src/
+    ├── main.jsx
+    ├── App.jsx
+    ├── index.css
+    │
+    ├── assets/
+    │   └── images/
+    │       └── parking-bg.jpg
+    │
+    ├── context/
+    │   └── AuthContext.jsx        ✅ Auth + JWT + role
+    │
+    ├── services/
+    │   ├── api.js                 ✅ Axios + interceptor
+    │   ├── authService.js         ✅ Login / Signup
+    │   ├── slotService.js         ✅ Slots APIs
+    │   ├── bookingService.js      ✅ Booking APIs
+    │   └── paymentService.js      ✅ Payment APIs
+    │
+    ├── utils/
+    │   ├── socket.js              ✅ WebSocket (live updates)
+    │   └── leafletIcon.js         ✅ Map icon fix
+    │
+    ├── components/
+    │   ├── common/
+    │   │   ├── Navbar.jsx         ✅ Top navigation
+    │   │   ├── Sidebar.jsx        ✅ Feature navigation
+    │   │   ├── Footer.jsx
+    │   │   └── DashboardLayout.jsx
+    │   │
+    │   ├── dashboard/
+    │   │   ├── StatsCard.jsx      ✅ KPIs
+    │   │   ├── SlotsPanel.jsx     ✅ Parking slots grid
+    │   │   └── VehiclesPanel.jsx  ✅ Vehicles table
+    │   │
+    │   ├── booking/
+    │   │   ├── BookingForm.jsx
+    │   │   └── PaymentModal.jsx
+    │   │
+    │   └── map/
+    │       └── LiveTrackingMap.jsx
+    │
+    └── pages/
+        ├── Home.jsx
+        │
+        ├── auth/
+        │   ├── Login.jsx
+        │   └── Signup.jsx
+        │
+        ├── AdminDashboard.jsx
+        ├── UserDashboard.jsx
+        ├── BookingPage.jsx
+        └── Profile.jsx              ✅ User/Admin profile
+
+
+
+
+
+
+
+
+
+smart-parking-system/
+│
+├── backend/
+│   ├── manage.py
+│   ├── requirements.txt
+│   ├── db.sqlite3   # remove if using MySQL
+│   │
+│   ├── backend/
+│   │   ├── __init__.py
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   ├── wsgi.py
+│   │   └── asgi.py
+│   │
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── urls.py
+│   │   ├── models.py
+│   │   ├── views.py
+│   │   ├── serializers.py
+│   │   ├── permissions.py
+│   │   └── admin.py
+│   │
+│   ├── middleware/
+│   │   └── __init__.py
+│   │
+│   └── .env
+│
+├── frontend/
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── package.json
+│   ├── README.md
+│   │
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── App.css
+│       ├── index.css
+│       │
+│       ├── assets/
+│       │   ├── images/
+│       │   ├── icons/
+│       │   └── logos/
+│       │
+│       ├── components/
+│       │   ├── common/
+│       │   │   ├── Navbar.jsx
+│       │   │   ├── Sidebar.jsx
+│       │   │   ├── Footer.jsx
+│       │   │   └── DashboardLayout.jsx
+│       │   │
+│       │   ├── dashboard/
+│       │   │   ├── StatsCard.jsx
+│       │   │   ├── SlotsPanel.jsx
+│       │   │   ├── VehiclesPanel.jsx
+│       │   │   └── PaymentForm.jsx
+│       │   │
+│       │   └── map/
+│       │       ├── LiveTrackingMap.jsx
+│       │       └── ParkingMap.jsx
+│       │
+│       ├── pages/
+│       │   ├── auth/
+│       │   │   ├── Login.jsx
+│       │   │   └── Signup.jsx
+│       │   │
+│       │   ├── admin/
+│       │   │   ├── AdminDashboard.jsx
+│       │   │   ├── ManageUsers.jsx
+│       │   │   ├── ManageSlots.jsx
+│       │   │   ├── ManageBookings.jsx
+│       │   │   └── VehicleTracking.jsx
+│       │   │
+│       │   ├── user/
+│       │   │   ├── UserDashboard.jsx
+│       │   │   ├── Booking.jsx
+│       │   │   ├── Bookings.jsx
+│       │   │   ├── Profile.jsx
+│       │   │   └── Tracking.jsx
+│       │   │
+│       │   ├── Home.jsx
+│       │   ├── Success.jsx
+│       │   └── NotFound.jsx
+│       │
+│       ├── router/
+│       │   ├── AppRouter.jsx
+│       │   └── ProtectedRoute.jsx
+│       │
+│       ├── context/
+│       │   └── AuthContext.jsx
+│       │
+│       ├── services/
+│       │   └── api.js
+│       │
+│       ├── utils/
+│       │   ├── helpers.js
+│       │   ├── socket.js
+│       │   └── vehicleSimulator.js
+│       │
+│       └── websocket/
+│           └── wsSlots.js
+│
+└── README.md
+
+
+#1   python manage.py runserver
+#2	python manage.py runmonitor
+Browser	React (npm run dev)
+
+
+
+src/App.jsx
+src/context/AuthContext.jsx
+src/context/ParkingContext.jsx
+src/components/common/ProfileMenu.jsx
+src/components/common/Navbar.jsx
+src/components/map/LiveParkingMap.jsx
+src/components/map/HeatmapLayer.jsx
+src/components/map/VehicleTrails.jsx
+src/components/map/ViolationLayer.jsx
+
+src/components/EntryExitPanel.jsx
+src/components/common/DashboardBackground.jsx
+src/components/admin/DevicePanel.jsx
+src/components/user/VehiclePickerModal.jsx
+src/main.jsx
+src/pages/booking/BookSlot.jsx
+src/pages/payment/Pay.jsx
+src/pages/booking/MyBookings.jsx
+src/pages/admin/AdminLiveMap.jsx
+src/pages/admin/AdminViolations.jsx
+src/pages/PublicDashboard.jsx
+src/pages/Dashboard.jsx
+src/pages/user/UserDashboard.jsx
+src/pages/NavigationPage.jsx
+src/pages/user/Payment.jsx
+src/pages/PaymentPage.jsx
+src/pages/user/Slots.jsx
+src/utils/leafletIcon.js
+src/services/api.js
+src/utils/socket.js
+src/utils/parkingEngine.js
+
+
