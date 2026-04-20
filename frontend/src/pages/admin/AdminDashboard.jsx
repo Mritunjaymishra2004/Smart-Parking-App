@@ -31,7 +31,7 @@ export default function AdminDashboard() {
     today_revenue: 0,
   });
 
-  // 🔐 Admin Guard
+  // Admin Guard
   if (!user || user.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-400 text-xl">
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
     );
   }
 
-  // 📡 Load KPI stats
+  // Load KPI stats
   const loadStats = async () => {
     try {
       const res = await getAdminStats();
@@ -57,13 +57,13 @@ export default function AdminDashboard() {
   }, []);
 
   const revenueData = [
-    { day: "Mon", revenue: 1200 },
-    { day: "Tue", revenue: 1800 },
-    { day: "Wed", revenue: 1500 },
-    { day: "Thu", revenue: 2300 },
-    { day: "Fri", revenue: 2800 },
-    { day: "Sat", revenue: 3200 },
-    { day: "Sun", revenue: 2900 },
+    { day: "Mon", revenue: 0 },
+    { day: "Tue", revenue: 0 },
+    { day: "Wed", revenue: 0 },
+    { day: "Thu", revenue: 0 },
+    { day: "Fri", revenue: 0 },
+    { day: "Sat", revenue: 0 },
+    { day: "Sun", revenue: 0 },
   ];
 
   return (
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
           <OccupancyRadar />
         </div>
 
-        {/* 🚀 LIVE MAP — FIXED */}
+        {/* LIVE MAP — FIXED */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl xl:col-span-2 flex flex-col overflow-hidden">
   
           <div className="px-4 py-3 border-b border-slate-800">

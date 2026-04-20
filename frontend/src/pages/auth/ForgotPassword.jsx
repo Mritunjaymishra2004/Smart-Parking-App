@@ -21,7 +21,7 @@ export default function ForgotPassword() {
     try {
       await api.post("/auth/password-reset/", { email });
 
-      setMessage("📩 OTP sent to your registered email");
+      setMessage("OTP sent to your registered email");
 
       setTimeout(() => {
         navigate("/reset-password", { state: { email } });
@@ -46,7 +46,7 @@ export default function ForgotPassword() {
           className="bg-slate-900/80 backdrop-blur-lg border border-slate-800 p-8 rounded-2xl w-full max-w-md text-white shadow-xl"
         >
           <h2 className="text-2xl font-bold mb-6 text-center">
-            🔑 Reset Password
+            Reset Password
           </h2>
 
           {error && (

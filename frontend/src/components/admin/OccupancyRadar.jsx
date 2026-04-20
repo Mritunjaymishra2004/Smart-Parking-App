@@ -30,7 +30,7 @@ export default function OccupancyRadar() {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col items-center justify-center">
       <h2 className="text-lg font-semibold mb-4">
-        📡 Live Occupancy
+        Live Occupancy
       </h2>
 
       <div className="relative w-40 h-40">
@@ -78,10 +78,10 @@ export default function OccupancyRadar() {
           : "text-emerald-400"
       }`}>
         {occupied > 80
-          ? "⚠️ Parking Almost Full"
+          ? "Parking Almost Full"
           : occupied > 50
-          ? "🟡 Moderate Load"
-          : "🟢 Parking Available"}
+          ? "Moderate Load"
+          : "Parking Available"}
       </p>
     </div>
   );

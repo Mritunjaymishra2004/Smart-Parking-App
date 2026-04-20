@@ -55,6 +55,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -89,7 +90,7 @@ ASGI_APPLICATION = "backend.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "parkingdb2",
+        "NAME": "parkingdb",
         "USER": "root",
         "PASSWORD": "Mrit@2004",
         "HOST": "localhost",
@@ -208,7 +209,13 @@ CRONJOBS = [
 
 
 
+ALLOWED_HOSTS = ["*"]
 
+CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://your-frontend-url.vercel.app"
+]
 
 
 

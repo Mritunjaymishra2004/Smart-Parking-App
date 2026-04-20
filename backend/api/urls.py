@@ -4,56 +4,57 @@ from . import views
 urlpatterns = [
 
     # =====================================================
-    # 🔐 AUTH
+    # AUTH
     # =====================================================
     path("auth/signup/", views.signup),
     path("auth/login/", views.login),
     path("auth/me/", views.me),
 
     # =====================================================
-    # 🅿 PARKING LOTS
+    # PARKING LOTS
     # =====================================================
     path("parking/lots/", views.parking_lots),
 
     # =====================================================
-    # 🅿 SLOTS
+    # SLOTS
     # =====================================================
     path("slots/", views.SlotListView.as_view()),
 
     # =====================================================
-    # 🚗 VEHICLES
+    # VEHICLES
     # =====================================================
     path("vehicles/", views.VehicleListCreateView.as_view()),   # <-- FIXED
     path("vehicles/live/", views.live_positions),
     path("vehicles/position/", views.update_vehicle_position),
 
     # =====================================================
-    # 📅 RESERVATION & PARKING FLOW
+    # RESERVATION & PARKING FLOW
     # =====================================================
     path("reservations/", views.my_bookings),                  # <-- FIXED
     path("reservations/create/", views.create_reservation),   # <-- FIXED
     path("sessions/enter/", views.vehicle_entry),             # <-- FIXED
     path("sessions/exit/", views.vehicle_exit),               # <-- FIXED
-
+    path("sessions/", views.user_sessions),
+    
     # =====================================================
-    # 💳 PAYMENTS
+    # PAYMENTS
     # =====================================================
     path("payments/", views.pay),                              # <-- FIXED
 
     # =====================================================
-    # 💰 WALLET
+    # WALLET
     # =====================================================
     path("wallet/add/", views.add_money),
     path("wallet/balance/", views.wallet_balance),
 
     # =====================================================
-    # ❌ CANCEL & REFUND
+    # CANCEL & REFUND
     # =====================================================
     path("booking/cancel/", views.cancel_booking),
     path("my-bookings/", views.my_bookings),
 
     # =====================================================
-    # 📊 ADMIN DASHBOARD
+    # ADMIN DASHBOARD
     # =====================================================
     path("admin/stats/", views.admin_stats),
     path("admin/sessions/", views.admin_sessions),
@@ -63,11 +64,13 @@ urlpatterns = [
     path("admin/bookings/", views.admin_bookings),
 
     # =====================================================
-    # 💳 ADMIN FINANCE & MONITORING
+    # ADMIN FINANCE & MONITORING
     # =====================================================
     path("admin/payments/", views.admin_payments),
     path("admin/live-vehicles/", views.admin_live_vehicles),
     path("admin/wallet-users/", views.admin_wallet_users),
+    path("admin/add-money/", views.admin_add_money),
+    path("parking/active/", views.active_parking),
 ]
 
 

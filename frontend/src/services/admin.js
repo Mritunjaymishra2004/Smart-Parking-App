@@ -1,7 +1,7 @@
 import api from "./api";
 
 // ================================
-// 📊 ADMIN DASHBOARD
+// ADMIN DASHBOARD
 // ================================
 
 export const getAdminStats = async () => {
@@ -32,7 +32,7 @@ export const getViolations = async () => {
 };
 
 // ================================
-// 🅿 PARKING LOTS
+// PARKING LOTS
 // ================================
 
 export const getParkingLots = async () => {

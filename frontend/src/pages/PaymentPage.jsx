@@ -34,20 +34,20 @@ export default function PaymentPage() {
     try {
       setLoading(true);
 
-      // 1️⃣ Exit parking session (calculates final bill)
+      // Exit parking session (calculates final bill)
       const exit = await api.post("/sessions/exit/", {
         session: session.id,
       });
 
       const amount = exit.data.charges || charges;
 
-      // 2️⃣ Pay using wallet
+      // Pay using wallet
       await api.post("/pay/", {
         session: session.id,
         method: "WALLET",
       });
 
-      alert(`✅ Paid ₹${amount}. Slot freed.`);
+      alert(`Paid ₹${amount}. Slot freed.`);
 
       navigate("/dashboard", { state: { slotFreed: true } });
     } catch (err) {
@@ -75,7 +75,7 @@ export default function PaymentPage() {
           <div className="bg-slate-800 p-8 rounded-xl w-[400px] shadow-xl">
 
             <h2 className="text-2xl font-bold mb-6 text-center">
-              💳 Exit & Pay
+              Exit & Pay
             </h2>
 
             <div className="space-y-3 text-lg">
@@ -120,10 +120,3 @@ export default function PaymentPage() {
     </>
   );
 }
-
-
-
-
-
-
-

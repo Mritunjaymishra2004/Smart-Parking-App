@@ -26,14 +26,14 @@ export default function EntryExitPanel({ booking }) {
         onClick={enter}
         className="bg-green-600 px-4 py-2 rounded mr-3"
       >
-        🚪 Enter Parking
+        Enter Parking
       </button>
 
       <button
         onClick={exit}
         className="bg-red-600 px-4 py-2 rounded"
       >
-        🏁 Exit Parking
+        Exit Parking
       </button>
     </div>
   );

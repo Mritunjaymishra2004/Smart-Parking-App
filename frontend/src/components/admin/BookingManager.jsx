@@ -24,7 +24,7 @@ export default function BookingManager() {
     loadSessions();
   }, []);
 
-  // 🔴 Live WebSocket updates (single shared socket)
+  // Live WebSocket updates (single shared socket)
   useEffect(() => {
     connectSocket((data) => {
       if (
@@ -40,7 +40,7 @@ export default function BookingManager() {
   return (
     <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
       <h2 className="text-lg font-semibold mb-4">
-        🚗 Live & Past Parking Sessions
+        Live & Past Parking Sessions
       </h2>
 
       {/* Header */}

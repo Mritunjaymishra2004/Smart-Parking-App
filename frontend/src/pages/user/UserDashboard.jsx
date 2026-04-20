@@ -22,7 +22,7 @@ export default function UserDashboard() {
   // ================================
   useEffect(() => {
     if (state?.slotFreed) {
-      alert("🅿️ Slot released. Thank you for using Smart Parking!");
+      alert("Slot released. Thank you for using Smart Parking!");
     }
   }, [state]);
 
@@ -84,7 +84,7 @@ export default function UserDashboard() {
       const res = await api.post("/wallet/add/", { amount });
       setWallet(res.data.wallet_balance);
       setAmount("");
-      alert("💰 Wallet updated!");
+      alert("Wallet updated!");
     } catch {
       alert("Wallet update failed");
     }
@@ -101,7 +101,7 @@ export default function UserDashboard() {
           <div className="flex-1 p-4">
             <div className="bg-slate-900/90 border border-slate-800 rounded-xl h-full overflow-hidden shadow-xl">
               <div className="px-4 py-3 border-b border-slate-800">
-                <h2 className="text-lg font-semibold">📍 Live Parking Map</h2>
+                <h2 className="text-lg font-semibold">Live Parking Map</h2>
               </div>
               <div className="h-[calc(100%-48px)]">
                 <LiveParkingMap />
@@ -114,14 +114,14 @@ export default function UserDashboard() {
 
             {/* PROFILE */}
             <div className="bg-slate-800 p-4 rounded-xl">
-              <h3 className="font-bold">👤 Profile</h3>
+              <h3 className="font-bold">Profile</h3>
               <p>{user?.name}</p>
               <p className="text-sm text-slate-400">{user?.email}</p>
             </div>
 
             {/* ACTIVE PARKING */}
             <div className="bg-slate-800 p-4 rounded-xl border border-emerald-600">
-              <h3 className="font-bold text-emerald-400">🅿 ACTIVE PARKING</h3>
+              <h3 className="font-bold text-emerald-400">ACTIVE PARKING</h3>
 
               {activeSession ? (
                 <>
@@ -159,7 +159,7 @@ export default function UserDashboard() {
 
             {/* WALLET */}
             <div className="bg-slate-800 p-4 rounded-lg">
-              <h3 className="font-bold">💰 Wallet</h3>
+              <h3 className="font-bold">Wallet</h3>
 
               <p className="text-2xl font-bold text-emerald-400">
                 ₹{wallet}
@@ -185,7 +185,7 @@ export default function UserDashboard() {
 
             {/* BOOKINGS */}
             <div className="bg-slate-800 p-4 rounded-lg">
-              <h3 className="font-bold">📅 My Bookings</h3>
+              <h3 className="font-bold">My Bookings</h3>
               <button
                 onClick={() => navigate("/my-bookings")}
                 className="mt-2 bg-slate-700 w-full py-1.5 rounded hover:bg-slate-600"

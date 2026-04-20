@@ -69,7 +69,7 @@ export default function AdminViolations() {
         <div className="min-h-screen text-white p-6">
 
           <h1 className="text-2xl font-bold mb-6">
-            🚨 Live Parking Violations
+            Live Parking Violations
           </h1>
 
           <table className="w-full border border-slate-700 rounded-lg overflow-hidden">
@@ -134,10 +134,3 @@ export default function AdminViolations() {
     </>
   );
 }
-
-
-
-
-
-
-

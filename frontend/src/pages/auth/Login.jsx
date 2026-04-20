@@ -114,13 +114,3 @@ export default function Login({ embedded }) {
     </DashboardBackground>
   );
 }
-
-
-
-
-
-
-
-
-
-

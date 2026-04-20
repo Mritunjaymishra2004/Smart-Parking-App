@@ -45,21 +45,21 @@ export default function PublicDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
               <div className="bg-slate-800 p-6 rounded-xl shadow">
-                <h3 className="text-lg font-bold mb-2">🅿 Live Slots</h3>
+                <h3 className="text-lg font-bold mb-2">Live Slots</h3>
                 <p className="text-slate-400">
                   View real-time parking availability
                 </p>
               </div>
 
               <div className="bg-slate-800 p-6 rounded-xl shadow">
-                <h3 className="text-lg font-bold mb-2">📍 Smart Navigation</h3>
+                <h3 className="text-lg font-bold mb-2">Smart Navigation</h3>
                 <p className="text-slate-400">
                   Get guided to your reserved slot
                 </p>
               </div>
 
               <div className="bg-slate-800 p-6 rounded-xl shadow">
-                <h3 className="text-lg font-bold mb-2">💳 Digital Payments</h3>
+                <h3 className="text-lg font-bold mb-2">Digital Payments</h3>
                 <p className="text-slate-400">
                   Pay and exit without waiting
                 </p>
@@ -72,7 +72,7 @@ export default function PublicDashboard() {
               onClick={() => navigate("/login")}
               className="bg-emerald-600 hover:bg-emerald-700 px-8 py-4 rounded-xl text-black font-bold text-lg shadow-lg"
             >
-              🚀 Book Parking Now
+              Book Parking Now
             </button>
 
           </div>
@@ -81,14 +81,3 @@ export default function PublicDashboard() {
     </DashboardBackground>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

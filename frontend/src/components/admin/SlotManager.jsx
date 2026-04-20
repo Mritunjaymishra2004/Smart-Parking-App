@@ -5,7 +5,7 @@ import { connectSocket } from "../../utils/socket";
 export default function SlotManager() {
   const [slots, setSlots] = useState([]);
 
-  // 🔄 Load slots from backend
+  //  Load slots from backend
   const loadSlots = async () => {
     try {
       const res = await api.get("/slots/");
@@ -16,12 +16,12 @@ export default function SlotManager() {
     }
   };
 
-  // 🟢 Initial load
+  //  Initial load
   useEffect(() => {
     loadSlots();
   }, []);
 
-  // 🔴 Live WebSocket updates (single shared socket — NO cleanup)
+  //  Live WebSocket updates (single shared socket — NO cleanup)
   useEffect(() => {
     connectSocket((data) => {
       if (data.type === "slots_update" || data.type === "refresh") {
@@ -30,7 +30,7 @@ export default function SlotManager() {
     });
   }, []);
 
-  // 🟢 Force free slot
+  //  Force free slot
   const freeSlot = async (slot) => {
     try {
       await api.post("/admin/free-slot/", {
@@ -42,7 +42,7 @@ export default function SlotManager() {
     }
   };
 
-  // 🔴 Block slot
+  //  Block slot
   const blockSlot = async (slot) => {
     try {
       await api.post("/admin/block-slot/", {

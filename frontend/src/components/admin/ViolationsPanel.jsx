@@ -25,7 +25,7 @@ export default function ViolationsPanel() {
   return (
     <div className="bg-slate-900 border border-red-500/40 rounded-xl p-4">
       <h2 className="text-lg font-semibold text-red-400 mb-3">
-        🚨 Violations & Overstays
+        Violations & Overstays
       </h2>
 
       <div className="grid grid-cols-5 text-xs text-slate-400 mb-2 px-2">
@@ -70,7 +70,7 @@ export default function ViolationsPanel() {
 
       {!loading && list.length === 0 && (
         <p className="text-slate-400 text-sm p-2">
-          No violations 🎉 Parking is clean
+          No violations Parking is clean
         </p>
       )}
     </div>

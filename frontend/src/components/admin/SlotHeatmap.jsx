@@ -42,7 +42,7 @@ export default function SlotHeatmap() {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
       <h2 className="text-lg font-semibold mb-4">
-        🔥 AI Slot Heatmap
+        AI Slot Heatmap
       </h2>
 
       <div className="space-y-3">

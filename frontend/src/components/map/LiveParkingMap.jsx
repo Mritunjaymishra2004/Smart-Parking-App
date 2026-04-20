@@ -129,11 +129,3 @@ export default function LiveParkingMap() {
     </div>
   );
 }
-
-
-
-
-
-
-
-

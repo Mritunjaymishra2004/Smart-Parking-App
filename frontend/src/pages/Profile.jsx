@@ -9,7 +9,7 @@ export default function Profile() {
   const { user, viewRole, logout, switchRole } = useAuth();
   const [mode, setMode] = useState("login"); // login | signup
 
-  // 🔓 Not logged in → Login / Signup
+  // Not logged in → Login / Signup
   if (!user) {
     return (
       <DashboardBackground>
@@ -42,7 +42,7 @@ export default function Profile() {
     );
   }
 
-  // 🔐 Logged in → Profile
+  // Logged in → Profile
   return (
     <>
       <Navbar />
@@ -128,13 +128,5 @@ function ProfileRow({ label, value, badge }) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
 
 

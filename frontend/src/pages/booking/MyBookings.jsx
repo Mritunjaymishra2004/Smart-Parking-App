@@ -21,7 +21,7 @@ export default function MyBookings() {
         <div className="min-h-screen p-8 text-white">
 
           <h1 className="text-3xl font-bold mb-6">
-            📄 My Parking Bookings
+            My Parking Bookings
           </h1>
 
           {loading && <p className="text-slate-400">Loading bookings...</p>}
@@ -78,16 +78,6 @@ export default function MyBookings() {
 function formatTime(time) {
   return new Date(time).toLocaleString();
 }
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -17,7 +17,7 @@ export default function ViolationLayer({ violations = [] }) {
           icon={violationIcon}
         >
           <Popup>
-            🚨 <b>Violation</b><br />
+            <b>Violation</b><br />
             {v.type || "Unknown"}<br />
             Vehicle: {v.vehicle_id}
           </Popup>

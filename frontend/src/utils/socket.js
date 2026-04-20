@@ -5,7 +5,7 @@ let vehicleSocket = null;
    SLOT UPDATES SOCKET
 =========================== */
 export const connectSocket = (onMessage) => {
-  if (slotSocket) return () => {};   // 🚫 prevent duplicate
+  if (slotSocket) return () => {};   // prevent duplicate
 
   const token = localStorage.getItem("access");
   if (!token) return () => {};
@@ -14,7 +14,7 @@ export const connectSocket = (onMessage) => {
   slotSocket = new WebSocket(url);
 
   slotSocket.onopen = () => {
-    console.log("🟢 Slot WebSocket connected");
+    console.log("Slot WebSocket connected");
   };
 
   slotSocket.onmessage = (e) => {
@@ -23,11 +23,11 @@ export const connectSocket = (onMessage) => {
   };
 
   slotSocket.onerror = () => {
-    console.warn("🔴 Slot WebSocket error");
+    console.warn("Slot WebSocket error");
   };
 
   slotSocket.onclose = () => {
-    console.warn("🟠 Slot WebSocket closed");
+    console.warn("Slot WebSocket closed");
     slotSocket = null;
   };
 
@@ -41,7 +41,7 @@ export const connectSocket = (onMessage) => {
    VEHICLE TRACKING SOCKET
 =========================== */
 export const connectVehicleUpdates = (onMessage) => {
-  if (vehicleSocket) return () => {};   // 🚫 prevent duplicate
+  if (vehicleSocket) return () => {};   // prevent duplicate
 
   const token = localStorage.getItem("access");
   if (!token) return () => {};
@@ -50,7 +50,7 @@ export const connectVehicleUpdates = (onMessage) => {
   vehicleSocket = new WebSocket(url);
 
   vehicleSocket.onopen = () => {
-    console.log("🟢 Vehicle WebSocket connected");
+    console.log("Vehicle WebSocket connected");
   };
 
   vehicleSocket.onmessage = (e) => {
@@ -59,11 +59,11 @@ export const connectVehicleUpdates = (onMessage) => {
   };
 
   vehicleSocket.onerror = () => {
-    console.warn("🔴 Vehicle WebSocket error");
+    console.warn("Vehicle WebSocket error");
   };
 
   vehicleSocket.onclose = () => {
-    console.warn("🟠 Vehicle WebSocket closed");
+    console.warn("Vehicle WebSocket closed");
     vehicleSocket = null;
   };
 

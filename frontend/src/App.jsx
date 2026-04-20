@@ -22,7 +22,7 @@ import AdminViolations from "./pages/admin/AdminViolations";
 export default function App() {
   const { user, viewRole, loading } = useAuth();
 
-  // ⏳ Wait for auth
+  //  Wait for auth
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-900 text-white text-xl">
@@ -34,17 +34,17 @@ export default function App() {
   return (
     <Routes>
 
-      {/* 🌍 Public */}
+      {/* Public */}
       <Route path="/" element={<PublicDashboard />} />
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
       <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* 🔐 Must be logged in */}
+      {/* Must be logged in */}
       {!user && <Route path="*" element={<Navigate to="/login" />} />}
 
-      {/* 🔄 Smart dashboard switch */}
+      {/* Smart dashboard switch */}
       {user && (
         <Route
           path="/dashboard"
@@ -58,7 +58,7 @@ export default function App() {
         />
       )}
 
-      {/* 👤 USER ROUTES */}
+      {/* USER ROUTES */}
       {user && viewRole === "user" && (
         <>
           <Route path="/slots" element={<Slots />} />
@@ -69,7 +69,7 @@ export default function App() {
         </>
       )}
 
-      {/* 🛠️ ADMIN ROUTES */}
+      {/* ADMIN ROUTES */}
       {user && viewRole === "admin" && (
         <>
           <Route path="/admin" element={<AdminDashboard />} />
@@ -78,14 +78,12 @@ export default function App() {
         </>
       )}
 
-      {/* 👤 Profile always allowed */}
+      {/* Profile always allowed */}
       {user && <Route path="/profile" element={<Profile />} />}
 
-      {/* 🚫 Catch all */}
+      {/* Catch all */}
       <Route path="*" element={<Navigate to="/dashboard" />} />
 
     </Routes>
   );
 }
-
-

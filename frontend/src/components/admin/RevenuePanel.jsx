@@ -19,7 +19,7 @@ export default function RevenuePanel() {
     loadStats();
   }, []);
 
-  // 🔴 Live WebSocket updates
+  // Live WebSocket updates
   useEffect(() => {
     connectSocket((data) => {
       if (
@@ -44,7 +44,7 @@ export default function RevenuePanel() {
   return (
     <div className="bg-gradient-to-br from-emerald-600/20 to-slate-900 border border-emerald-500/30 rounded-xl p-6">
       <h2 className="text-lg font-semibold text-emerald-400 mb-4">
-        💰 Revenue Analytics
+        Revenue Analytics
       </h2>
 
       <div className="grid grid-cols-2 gap-4">

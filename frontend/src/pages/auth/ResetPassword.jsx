@@ -38,7 +38,7 @@ export default function ResetPassword() {
         new_password: newPassword,
       });
 
-      setMessage("✅ Password reset successfully!");
+      setMessage("Password reset successfully!");
 
       setTimeout(() => {
         navigate("/login");
@@ -79,7 +79,7 @@ export default function ResetPassword() {
           className="bg-slate-900/80 backdrop-blur-lg border border-slate-800 p-8 rounded-2xl w-full max-w-md text-white shadow-xl"
         >
           <h2 className="text-2xl font-bold mb-6 text-center">
-            🔑 Reset Password
+            Reset Password
           </h2>
 
           {error && (

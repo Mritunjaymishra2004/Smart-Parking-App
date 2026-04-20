@@ -47,7 +47,7 @@ export default function DevicePanel() {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
       <h2 className="text-lg font-semibold text-white mb-3">
-        📡 Live Vehicle Devices
+        Live Vehicle Devices
       </h2>
 
       {error && (

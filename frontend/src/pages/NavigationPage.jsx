@@ -21,7 +21,7 @@ export default function NavigationPage() {
 
   const handleArrive = async () => {
     try {
-      // 🔥 Correct backend call
+      // Correct backend call
       const res = await api.post("/vehicle/entry/", {
         vehicle: selectedVehicle.id,
       });
@@ -46,7 +46,7 @@ export default function NavigationPage() {
         <div className="min-h-screen text-white flex flex-col items-center justify-center">
 
           <h1 className="text-3xl font-bold mb-4">
-            📍 Navigate to Slot {slot.code}
+            Navigate to Slot {slot.code}
           </h1>
 
           <div className="bg-gray-800 p-6 rounded-xl mb-6 text-center">
@@ -64,7 +64,7 @@ export default function NavigationPage() {
             href={`https://www.google.com/maps?q=${slot.y},${slot.x}`}
             className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg mb-6"
           >
-            🗺️ Start Google Navigation
+            Start Google Navigation
           </a>
 
           {/* Arrival */}
@@ -72,7 +72,7 @@ export default function NavigationPage() {
             onClick={handleArrive}
             className="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-lg text-xl"
           >
-            🚗 I have parked
+            I have parked
           </button>
 
         </div>
@@ -80,18 +80,5 @@ export default function NavigationPage() {
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

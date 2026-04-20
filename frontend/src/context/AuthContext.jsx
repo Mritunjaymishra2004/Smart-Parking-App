@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [viewRole, setViewRole] = useState("user");
   const [loading, setLoading] = useState(true);
 
-  // 🔄 Load logged-in user
+  // Load logged-in user
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem("access");
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // 🔐 LOGIN
+  // LOGIN
   const login = async (email, password) => {
     const res = await api.post("/auth/login/", {
       email,
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     connectSocket(); // connect only after token saved
   };
 
-  // 📝 SIGNUP
+  // SIGNUP
   const signup = async (email, password, name) => {
     await api.post("/auth/signup/", {
       email,

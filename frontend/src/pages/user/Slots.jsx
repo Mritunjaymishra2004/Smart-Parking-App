@@ -39,7 +39,7 @@ export default function Slots() {
         <div className="min-h-screen text-white p-10">
 
           <h2 className="text-3xl font-bold mb-6">
-            🅿️ Live Parking Slots
+            Live Parking Slots
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
