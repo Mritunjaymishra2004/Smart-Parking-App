@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Violations</h2>
+<table id="v" class="w-full"></table>
+
+<script>
+fetch("/api/admin/violations/",{
+ headers:{Authorization:"Bearer "+localStorage.getItem("access")}
+}).then(r=>r.json()).then(data=>{
+  v.innerHTML=data.map(x=>`<tr><td>${x.type}</td><td>${x.fine}</td></tr>`).join("");
+});
+</script>
+
+{% endblock %}

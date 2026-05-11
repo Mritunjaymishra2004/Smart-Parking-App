@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-md mx-auto bg-slate-800 p-6 rounded-xl">
+<h2 class="text-xl mb-4">Login</h2>
+
+<input id="email" placeholder="Email" class="w-full p-2 mb-3 bg-slate-700 rounded">
+<input id="password" type="password" placeholder="Password" class="w-full p-2 mb-3 bg-slate-700 rounded">
+
+<button onclick="login()" class="w-full bg-emerald-600 p-2 rounded">Login</button>
+
+<script>
+async function login(){
+  const res = await fetch("/api/auth/login/", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      email:email.value,
+      password:password.value
+    })
+  });
+  const data = await res.json();
+  localStorage.setItem("access",data.access);
+  window.location="/dashboard/";
+}
+</script>
+
+</div>
+
+{% endblock %}
