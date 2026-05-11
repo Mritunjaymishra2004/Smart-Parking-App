@@ -24,7 +24,7 @@ from django.http import HttpResponse
 def home(request):
     return HttpResponse(
         """
-        <h1>🅿 Smart Parking System Backend Running</h1>
+        <h1>Smart Parking System Backend Running</h1>
         <p>API Base URL: <a href="/api/">/api/</a></p>
         <p>Django Admin: <a href="/admin/">/admin/</a></p>
         """

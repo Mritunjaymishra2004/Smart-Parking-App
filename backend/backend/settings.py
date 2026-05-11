@@ -1,221 +1,449 @@
 import os
-#import pymysql
+
 from pathlib import Path
+
 from datetime import timedelta
 
-#pymysql.install_as_MySQLdb()
+from decouple import config
+
+
+# =====================================================
+# BASE DIRECTORY
+# =====================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # =====================================================
 # SECURITY
 # =====================================================
-SECRET_KEY = "django-insecure-change-this-in-production"
-DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+SECRET_KEY = config("SECRET_KEY")
+
+DEBUG = config(
+    "DEBUG",
+    default=False,
+    cast=bool
+)
+
+ALLOWED_HOSTS = [
+
+    "localhost",
+
+    "127.0.0.1",
+
+    ".onrender.com",
+]
+
 
 # =====================================================
 # APPLICATIONS
 # =====================================================
+
 INSTALLED_APPS = [
+
+    # Channels
     "daphne",
 
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-
-    "rest_framework",
-    "rest_framework.authtoken",
-    "rest_framework_simplejwt",
     "channels",
 
-    # 🔹 CORS (added – was missing)
+    # Django
+    "django.contrib.admin",
+
+    "django.contrib.auth",
+
+    "django.contrib.contenttypes",
+
+    "django.contrib.sessions",
+
+    "django.contrib.messages",
+
+    "django.contrib.staticfiles",
+
+    # Third Party
     "corsheaders",
 
-    "api",
+    "rest_framework",
 
-#     "django_crontab"
- ]
+    "rest_framework_simplejwt",
+
+    "rest_framework_simplejwt.token_blacklist",
+
+    # Local Apps
+    "api",
+]
+
 
 # =====================================================
 # MIDDLEWARE
 # =====================================================
+
 MIDDLEWARE = [
-    # 🔹 CORS must be FIRST
+
     "corsheaders.middleware.CorsMiddleware",
 
-    "backend.middleware.SimpleCORSMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
     "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    "django.contrib.sessions.middleware.SessionMiddleware",
+
+    "django.middleware.common.CommonMiddleware",
+
+    "django.middleware.csrf.CsrfViewMiddleware",
+
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+
+    "django.contrib.messages.middleware.MessageMiddleware",
+
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
+# =====================================================
+# URLS
+# =====================================================
+
 ROOT_URLCONF = "backend.urls"
+
 
 # =====================================================
 # TEMPLATES
 # =====================================================
+
 TEMPLATES = [
+
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")],
+
+        "BACKEND":
+            "django.template.backends.django.DjangoTemplates",
+
+        "DIRS": [],
+
         "APP_DIRS": True,
+
         "OPTIONS": {
+
             "context_processors": [
+
                 "django.template.context_processors.request",
+
                 "django.contrib.auth.context_processors.auth",
+
                 "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
+
 # =====================================================
 # ASGI / WSGI
 # =====================================================
+
 WSGI_APPLICATION = "backend.wsgi.application"
+
 ASGI_APPLICATION = "backend.asgi.application"
+
 
 # =====================================================
 # DATABASE
 # =====================================================
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "parkingdb",
-        "USER": "root",
-        "PASSWORD": "Mrit@2004",
-        "HOST": "localhost",
-        "PORT": "3306",
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
+
+USE_SQLITE = config(
+    "USE_SQLITE",
+    default=True,
+    cast=bool
+)
+
+if USE_SQLITE:
+
+    DATABASES = {
+
+        "default": {
+
+            "ENGINE":
+                "django.db.backends.sqlite3",
+
+            "NAME":
+                BASE_DIR / "db.sqlite3",
         }
     }
-}
+
+else:
+
+    DATABASES = {
+
+        "default": {
+
+            "ENGINE":
+                "django.db.backends.postgresql",
+
+            "NAME":
+                config("DB_NAME"),
+
+            "USER":
+                config("DB_USER"),
+
+            "PASSWORD":
+                config("DB_PASSWORD"),
+
+            "HOST":
+                config("DB_HOST"),
+
+            "PORT":
+                config("DB_PORT"),
+        }
+    }
+
 
 # =====================================================
 # PASSWORD VALIDATION
 # =====================================================
+
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+
+    {
+
+        "NAME":
+            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+
+    {
+
+        "NAME":
+            "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+
+    {
+
+        "NAME":
+            "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
 ]
 
+
 # =====================================================
-# TIME
+# INTERNATIONALIZATION
 # =====================================================
+
 LANGUAGE_CODE = "en-us"
+
 TIME_ZONE = "Asia/Kolkata"
+
 USE_I18N = True
+
 USE_TZ = True
 
+
 # =====================================================
-# STATIC
+# STATIC FILES
 # =====================================================
+
 STATIC_URL = "/static/"
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
 
-FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"
-FRONTEND_ASSETS = FRONTEND_DIST / "assets"
+STATICFILES_STORAGE = (
 
-if FRONTEND_ASSETS.exists():
-    STATICFILES_DIRS.append(FRONTEND_ASSETS)
-    TEMPLATES[0]["DIRS"].append(FRONTEND_DIST)
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
+
+STATICFILES_DIRS = [
+
+    BASE_DIR / "static"
+]
+
+
+# =====================================================
+# DEFAULT PRIMARY KEY
+# =====================================================
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
 # =====================================================
-# DJANGO REST + JWT
+# DJANGO REST FRAMEWORK
 # =====================================================
+
 REST_FRAMEWORK = {
+
     "DEFAULT_AUTHENTICATION_CLASSES": (
+
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+
     "DEFAULT_PERMISSION_CLASSES": (
+
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("Bearer",),
-}
 
 # =====================================================
-# CORS (React Vite)
+# JWT
 # =====================================================
-CORS_ALLOW_ALL_ORIGINS = True
+
+SIMPLE_JWT = {
+
+    "ACCESS_TOKEN_LIFETIME":
+        timedelta(minutes=60),
+
+    "REFRESH_TOKEN_LIFETIME":
+        timedelta(days=7),
+
+    "ROTATE_REFRESH_TOKENS":
+        True,
+
+    "BLACKLIST_AFTER_ROTATION":
+        True,
+
+    "AUTH_HEADER_TYPES":
+        ("Bearer",),
+}
+
+
+# =====================================================
+# CORS
+# =====================================================
+
+CORS_ALLOWED_ORIGINS = [
+
+    "http://localhost:5173",
+
+    "https://your-frontend.vercel.app",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_HEADERS = [
-    "authorization",
-    "content-type",
-    "accept",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-]
+
+# =====================================================
+# CSRF
+# =====================================================
 
 CSRF_TRUSTED_ORIGINS = [
+
     "http://localhost:5173",
-    "http://127.0.0.1:5173",
+
+    "https://your-frontend.vercel.app",
 ]
 
+
 # =====================================================
-# CHANNELS (WebSockets)
+# CHANNEL LAYERS
 # =====================================================
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+
+USE_REDIS = config(
+    "USE_REDIS",
+    default=False,
+    cast=bool
+)
+
+if USE_REDIS:
+
+    CHANNEL_LAYERS = {
+
+        "default": {
+
+            "BACKEND":
+                "channels_redis.core.RedisChannelLayer",
+
+            "CONFIG": {
+
+                "hosts": [
+
+                    (
+                        config(
+                            "REDIS_HOST",
+                            default="127.0.0.1"
+                        ),
+
+                        config(
+                            "REDIS_PORT",
+                            default=6379,
+                            cast=int
+                        ),
+                    )
+                ],
+            },
         },
-    },
-}
+    }
+
+else:
+
+    CHANNEL_LAYERS = {
+
+        "default": {
+
+            "BACKEND":
+                "channels.layers.InMemoryChannelLayer",
+        },
+    }
+
+
+# =====================================================
+# SECURITY SETTINGS
+# =====================================================
+
+SECURE_BROWSER_XSS_FILTER = True
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+X_FRAME_OPTIONS = "DENY"
+
+SESSION_COOKIE_HTTPONLY = True
+
+CSRF_COOKIE_HTTPONLY = True
+
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+
+# =====================================================
+# HTTPS SECURITY (PRODUCTION)
+# =====================================================
+
+if not DEBUG:
+
+    SECURE_SSL_REDIRECT = True
+
+    SESSION_COOKIE_SECURE = True
+
+    CSRF_COOKIE_SECURE = True
+
+    SECURE_HSTS_SECONDS = 31536000
+
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+    SECURE_HSTS_PRELOAD = True
+
 
 # =====================================================
 # LOGGING
 # =====================================================
+
 LOGGING = {
+
     "version": 1,
+
     "disable_existing_loggers": False,
+
     "handlers": {
-        "console": {"class": "logging.StreamHandler"},
+
+        "console": {
+
+            "class":
+                "logging.StreamHandler",
+        },
     },
-    "loggers": {
-        "django": {"handlers": ["console"], "level": "INFO"},
-        "channels": {"handlers": ["console"], "level": "DEBUG"},
+
+    "root": {
+
+        "handlers": ["console"],
+
+        "level": "INFO",
     },
 }
 
-CRONJOBS = [
-    ('*/1 * * * *', 'api.cron.run_parking_monitor')
-]
-
-
-
-
-
-ALLOWED_HOSTS = ["*"]
-
-CORS_ALLOW_ALL_ORIGINS = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://your-frontend-url.vercel.app"
-]
 
 
 
@@ -231,3 +459,192 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 
+
+
+
+
+
+
+
+
+
+
+# import os
+# from pathlib import Path
+# from datetime import timedelta
+
+# BASE_DIR = Path(__file__).resolve().parent.parent
+
+# # ===============================
+
+# # SECURITY
+
+# # ===============================
+
+# SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
+# DEBUG = True
+
+# ALLOWED_HOSTS = [
+# "localhost",
+# "127.0.0.1",
+# ".onrender.com",
+# ]
+
+# # ===============================
+
+# # APPLICATIONS
+
+# # ===============================
+
+# INSTALLED_APPS = [
+# "django.contrib.admin",
+# "django.contrib.auth",
+# "django.contrib.contenttypes",
+# "django.contrib.sessions",
+# "django.contrib.messages",
+# "django.contrib.staticfiles",
+
+# "rest_framework",
+# "corsheaders",
+
+# "api",
+# ]
+
+# # ===============================
+
+# # MIDDLEWARE
+
+# # ===============================
+
+# MIDDLEWARE = [
+# "corsheaders.middleware.CorsMiddleware",   # must be first
+# "django.middleware.security.SecurityMiddleware",
+# "django.contrib.sessions.middleware.SessionMiddleware",
+# "django.middleware.common.CommonMiddleware",
+# "django.middleware.csrf.CsrfViewMiddleware",
+# "django.contrib.auth.middleware.AuthenticationMiddleware",
+# "django.contrib.messages.middleware.MessageMiddleware",
+# ]
+
+# ROOT_URLCONF = "backend.urls"
+
+# # ===============================
+
+# # TEMPLATES
+
+# # ===============================
+
+# TEMPLATES = [
+# {
+# "BACKEND": "django.template.backends.django.DjangoTemplates",
+# "DIRS": [],
+# "APP_DIRS": True,
+# "OPTIONS": {
+# "context_processors": [
+# "django.template.context_processors.request",
+# "django.contrib.auth.context_processors.auth",
+# "django.contrib.messages.context_processors.messages",
+# ],
+# },
+# },
+# ]
+
+# # ===============================
+
+# # ASGI / WSGI
+
+# # ===============================
+
+# WSGI_APPLICATION = "backend.wsgi.application"
+
+# # ===============================
+
+# # DATABASE (SAFE)
+
+# # ===============================
+
+# DATABASES = {
+# "default": {
+# "ENGINE": "django.db.backends.sqlite3",
+# "NAME": BASE_DIR / "db.sqlite3",
+# }
+# }
+
+# # ===============================
+
+# # PASSWORD VALIDATION
+
+# # ===============================
+
+# AUTH_PASSWORD_VALIDATORS = [
+# {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+# {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+# ]
+
+# # ===============================
+
+# # TIME
+
+# # ===============================
+
+# LANGUAGE_CODE = "en-us"
+# TIME_ZONE = "Asia/Kolkata"
+# USE_I18N = True
+# USE_TZ = True
+
+# # ===============================
+
+# # STATIC
+
+# # ===============================
+
+# STATIC_URL = "/static/"
+# STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# # ===============================
+
+# # REST FRAMEWORK
+
+# # ===============================
+
+# REST_FRAMEWORK = {
+# "DEFAULT_AUTHENTICATION_CLASSES": (
+# "rest_framework.authentication.SessionAuthentication",
+# ),
+# "DEFAULT_PERMISSION_CLASSES": (
+# "rest_framework.permissions.AllowAny",
+# ),
+# }
+
+# # ===============================
+
+# # JWT (optional)
+
+# # ===============================
+
+# SIMPLE_JWT = {
+# "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+# "AUTH_HEADER_TYPES": ("Bearer",),
+# }
+
+# # ===============================
+
+# # CORS (FIXED)
+
+# # ===============================
+
+# CORS_ALLOWED_ORIGINS = [
+# "http://localhost:5173",
+# ]
+
+# CORS_ALLOW_CREDENTIALS = True
+
+# # ===============================
+
+# # CSRF
+
+# # ===============================
+
+# CSRF_TRUSTED_ORIGINS = [
+# "http://localhost:5173",
+# ]

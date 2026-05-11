@@ -76,7 +76,7 @@ export default function AdminSessionsPanel() {
 
       {!loading && sessions.length === 0 && (
         <p className="text-slate-400 text-sm p-2">
-          No active sessions 🚗
+          No active sessions at the moment.
         </p>
       )}
     </div>

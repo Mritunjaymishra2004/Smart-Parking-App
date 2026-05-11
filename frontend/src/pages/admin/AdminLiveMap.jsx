@@ -36,31 +36,79 @@ export default function AdminLiveMap() {
 
   /* ================= Live Slot Updates ================= */
   useEffect(() => {
-    return connectSocket(msg => {
-      if (msg.type === "slots_update") setSlots(msg.slots);
-      if (msg.type === "violation") {
-        setViolations(v => [...v, msg]);
-      }
-    });
-  }, []);
+
+  connectSocket(msg => {
+
+    if (msg.type === "slots_update") {
+
+      setSlots(msg.slots);
+    }
+
+    if (msg.type === "violation") {
+
+      setViolations(v => [...v, msg]);
+    }
+
+  });
+
+  return () => {
+
+    // optional cleanup
+  };
+
+}, []);
 
   /* ================= Live Vehicle Updates ================= */
   useEffect(() => {
-    return connectVehicleUpdates(msg => {
-      if (msg.type === "vehicle_position") {
-        setVehicles(prev => {
-          const old = prev.find(v => v.vehicle_id === msg.vehicle_id);
-          return [
-            ...prev.filter(v => v.vehicle_id !== msg.vehicle_id),
-            {
-              ...msg,
-              trail: old ? [...old.trail, [msg.y, msg.x]] : [[msg.y, msg.x]]
-            }
-          ];
-        });
-      }
-    });
-  }, []);
+
+  connectVehicleUpdates(msg => {
+
+    if (msg.type === "vehicle_position") {
+
+      setVehicles(prev => {
+
+        const old = prev.find(
+
+          v => v.vehicle_id === msg.vehicle_id
+        );
+
+        return [
+
+          ...prev.filter(
+
+            v => v.vehicle_id !== msg.vehicle_id
+          ),
+
+          {
+
+            ...msg,
+
+            trail: old
+
+              ? [
+
+                  ...old.trail,
+
+                  [msg.y, msg.x]
+                ]
+
+              : [
+
+                  [msg.y, msg.x]
+                ]
+          }
+        ];
+      });
+    }
+
+  });
+
+  return () => {
+
+    // optional cleanup
+  };
+
+}, []);
 
   /* ================= Force Release ================= */
   const forceRelease = async (slot) => {
