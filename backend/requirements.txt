@@ -43,7 +43,6 @@ Flask-Mail==0.10.0
 Flask-SQLAlchemy==3.1.1
 forex-python==1.9.2
 frozenlist==1.8.0
-googletrans==3.1.0a0
 greenlet==3.2.3
 gunicorn==25.3.0
 h11==0.16.0
