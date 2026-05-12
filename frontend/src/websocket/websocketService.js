@@ -103,7 +103,7 @@ export const disconnectWebSocket = () => {
 //   manuallyClosed = false;
 
 //   const wsUrl =
-//     "wss://127.0.0.1:8000/ws/parking/";
+//     
 //    https://smart-parking-app-4on2.vercel.app
 //   console.log(
 //     "Connecting WebSocket:",
