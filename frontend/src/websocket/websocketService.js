@@ -26,7 +26,7 @@ export const connectWebSocket = (onMessage) => {
   manuallyClosed = false;
 
   const wsUrl =
-    "ws://127.0.0.1:8000/ws/parking/";
+    "wss://127.0.0.1:8000/ws/parking/";
 
   console.log(
     "Connecting WebSocket:",

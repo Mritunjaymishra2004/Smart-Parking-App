@@ -7,6 +7,7 @@ from datetime import timedelta
 from decouple import config
 
 
+
 # =====================================================
 # BASE DIRECTORY
 # =====================================================
@@ -26,14 +27,15 @@ DEBUG = config(
     cast=bool
 )
 
-ALLOWED_HOSTS = [
+ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS = [
 
-    "localhost",
+#     "localhost",
 
-    "127.0.0.1",
+#     "127.0.0.1",
 
-    ".onrender.com",
-]
+#     ".onrender.com",
+# ]
 
 
 # =====================================================
@@ -42,10 +44,10 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
 
-    # Channels
-    "daphne",
+    
+    #"daphne",
 
-    "channels",
+    #"channels",
 
     # Django
     "django.contrib.admin",
@@ -143,7 +145,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
-ASGI_APPLICATION = "backend.asgi.application"
+#ASGI_APPLICATION = "backend.asgi.application"
 
 
 # =====================================================
@@ -244,10 +246,7 @@ STATIC_URL = "/static/"
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_STORAGE = (
-
-    "whitenoise.storage.CompressedManifestStaticFilesStorage"
-)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = [
 
@@ -260,6 +259,7 @@ STATICFILES_DIRS = [
 # =====================================================
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 
 
 # =====================================================
@@ -310,11 +310,12 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
 
     "http://localhost:5173",
-
-    "https://your-frontend.vercel.app",
+    
+    "https://smart-parking-app-4on2.vercel.app",
+    #"https://your-frontend.vercel.app",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_A_CREDENTIALS = True
 
 
 # =====================================================
@@ -325,7 +326,8 @@ CSRF_TRUSTED_ORIGINS = [
 
     "http://localhost:5173",
 
-    "https://your-frontend.vercel.app",
+    "https://smart-parking-app-4on2.vercel.app/"
+    #"https://your-frontend.vercel.app",
 ]
 
 
@@ -333,52 +335,52 @@ CSRF_TRUSTED_ORIGINS = [
 # CHANNEL LAYERS
 # =====================================================
 
-USE_REDIS = config(
-    "USE_REDIS",
-    default=False,
-    cast=bool
-)
+# USE_REDIS = config(
+#     "USE_REDIS",
+#     default=False,
+#     cast=bool
+# )
 
-if USE_REDIS:
+# if USE_REDIS:
 
-    CHANNEL_LAYERS = {
+#     CHANNEL_LAYERS = {
 
-        "default": {
+#         "default": {
 
-            "BACKEND":
-                "channels_redis.core.RedisChannelLayer",
+#             "BACKEND":
+#                 "channels_redis.core.RedisChannelLayer",
 
-            "CONFIG": {
+#             "CONFIG": {
 
-                "hosts": [
+#                 "hosts": [
 
-                    (
-                        config(
-                            "REDIS_HOST",
-                            default="127.0.0.1"
-                        ),
+#                     (
+#                         config(
+#                             "REDIS_HOST",
+#                             default="127.0.0.1"
+#                         ),
 
-                        config(
-                            "REDIS_PORT",
-                            default=6379,
-                            cast=int
-                        ),
-                    )
-                ],
-            },
-        },
-    }
+#                         config(
+#                             "REDIS_PORT",
+#                             default=6379,
+#                             cast=int
+#                         ),
+#                     )
+#                 ],
+#             },
+#         },
+#     }
 
-else:
+# else:
 
-    CHANNEL_LAYERS = {
+#     CHANNEL_LAYERS = {
 
-        "default": {
+#         "default": {
 
-            "BACKEND":
-                "channels.layers.InMemoryChannelLayer",
-        },
-    }
+#             "BACKEND":
+#                 "channels.layers.InMemoryChannelLayer",
+#         },
+#     }
 
 
 # =====================================================
@@ -443,208 +445,3 @@ LOGGING = {
         "level": "INFO",
     },
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# import os
-# from pathlib import Path
-# from datetime import timedelta
-
-# BASE_DIR = Path(__file__).resolve().parent.parent
-
-# # ===============================
-
-# # SECURITY
-
-# # ===============================
-
-# SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
-# DEBUG = True
-
-# ALLOWED_HOSTS = [
-# "localhost",
-# "127.0.0.1",
-# ".onrender.com",
-# ]
-
-# # ===============================
-
-# # APPLICATIONS
-
-# # ===============================
-
-# INSTALLED_APPS = [
-# "django.contrib.admin",
-# "django.contrib.auth",
-# "django.contrib.contenttypes",
-# "django.contrib.sessions",
-# "django.contrib.messages",
-# "django.contrib.staticfiles",
-
-# "rest_framework",
-# "corsheaders",
-
-# "api",
-# ]
-
-# # ===============================
-
-# # MIDDLEWARE
-
-# # ===============================
-
-# MIDDLEWARE = [
-# "corsheaders.middleware.CorsMiddleware",   # must be first
-# "django.middleware.security.SecurityMiddleware",
-# "django.contrib.sessions.middleware.SessionMiddleware",
-# "django.middleware.common.CommonMiddleware",
-# "django.middleware.csrf.CsrfViewMiddleware",
-# "django.contrib.auth.middleware.AuthenticationMiddleware",
-# "django.contrib.messages.middleware.MessageMiddleware",
-# ]
-
-# ROOT_URLCONF = "backend.urls"
-
-# # ===============================
-
-# # TEMPLATES
-
-# # ===============================
-
-# TEMPLATES = [
-# {
-# "BACKEND": "django.template.backends.django.DjangoTemplates",
-# "DIRS": [],
-# "APP_DIRS": True,
-# "OPTIONS": {
-# "context_processors": [
-# "django.template.context_processors.request",
-# "django.contrib.auth.context_processors.auth",
-# "django.contrib.messages.context_processors.messages",
-# ],
-# },
-# },
-# ]
-
-# # ===============================
-
-# # ASGI / WSGI
-
-# # ===============================
-
-# WSGI_APPLICATION = "backend.wsgi.application"
-
-# # ===============================
-
-# # DATABASE (SAFE)
-
-# # ===============================
-
-# DATABASES = {
-# "default": {
-# "ENGINE": "django.db.backends.sqlite3",
-# "NAME": BASE_DIR / "db.sqlite3",
-# }
-# }
-
-# # ===============================
-
-# # PASSWORD VALIDATION
-
-# # ===============================
-
-# AUTH_PASSWORD_VALIDATORS = [
-# {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-# {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-# ]
-
-# # ===============================
-
-# # TIME
-
-# # ===============================
-
-# LANGUAGE_CODE = "en-us"
-# TIME_ZONE = "Asia/Kolkata"
-# USE_I18N = True
-# USE_TZ = True
-
-# # ===============================
-
-# # STATIC
-
-# # ===============================
-
-# STATIC_URL = "/static/"
-# STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# # ===============================
-
-# # REST FRAMEWORK
-
-# # ===============================
-
-# REST_FRAMEWORK = {
-# "DEFAULT_AUTHENTICATION_CLASSES": (
-# "rest_framework.authentication.SessionAuthentication",
-# ),
-# "DEFAULT_PERMISSION_CLASSES": (
-# "rest_framework.permissions.AllowAny",
-# ),
-# }
-
-# # ===============================
-
-# # JWT (optional)
-
-# # ===============================
-
-# SIMPLE_JWT = {
-# "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-# "AUTH_HEADER_TYPES": ("Bearer",),
-# }
-
-# # ===============================
-
-# # CORS (FIXED)
-
-# # ===============================
-
-# CORS_ALLOWED_ORIGINS = [
-# "http://localhost:5173",
-# ]
-
-# CORS_ALLOW_CREDENTIALS = True
-
-# # ===============================
-
-# # CSRF
-
-# # ===============================
-
-# CSRF_TRUSTED_ORIGINS = [
-# "http://localhost:5173",
-# ]
