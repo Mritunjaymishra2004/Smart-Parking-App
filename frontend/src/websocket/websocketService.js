@@ -10,7 +10,7 @@ const fetchParkingData = async (onMessage) => {
   try {
 
     const response = await fetch(
-      "https://smart-parking-app-4on2.vercel.app/api/parking/"
+      "https://smart-parking-app-4on2.vercel.app/api/v1/parking/"
     );
 
     const data = await response.json();
