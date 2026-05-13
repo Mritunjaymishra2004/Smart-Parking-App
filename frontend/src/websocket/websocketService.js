@@ -13,9 +13,26 @@ const fetchParkingData = async (onMessage) => {
       "https://smart-parking-app-4on2.vercel.app/api/v1/parking/"
     );
 
-    const data = await response.json();
+    const text = await response.text();
 
-    onMessage?.(data);
+    try {
+
+      const data = JSON.parse(text);
+
+      console.log(
+        "Parking Data:",
+        data
+      );
+
+      onMessage?.(data);
+
+    } catch {
+
+      console.error(
+        "API did not return JSON:",
+        text
+      );
+    }
 
   } catch (err) {
 
