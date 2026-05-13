@@ -312,7 +312,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     
     "https://smart-parking-app-4on2.vercel.app",
-    #"https://your-frontend.vercel.app",
+    
 ]
 
 CORS_ALLOW_A_CREDENTIALS = True
