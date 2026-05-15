@@ -315,9 +315,8 @@ CORS_ALLOWED_ORIGINS = [
     
 ]
 
-CORS_ALLOW_A_CREDENTIALS = True
-
-
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 # =====================================================
 # CSRF
 # =====================================================
@@ -326,8 +325,9 @@ CSRF_TRUSTED_ORIGINS = [
 
     "http://localhost:5173",
 
-    "https://smart-parking-app-4on2.vercel.app/"
-    #"https://your-frontend.vercel.app",
+    "https://smart-parking-app-4on2.vercel.app",
+
+    "https://smart-parking-app-hazel.vercel.app",
 ]
 
 

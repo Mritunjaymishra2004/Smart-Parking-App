@@ -2,7 +2,15 @@ let pollingInterval = null;
 
 
 // =====================================================
-// FETCH DATA
+// BASE API URL
+// =====================================================
+
+const BASE_API_URL =
+  "https://smart-parking-app-4on2.vercel.app/api";
+
+
+// =====================================================
+// FETCH PARKING SLOT DATA
 // =====================================================
 
 const fetchParkingData = async (onMessage) => {
@@ -10,29 +18,25 @@ const fetchParkingData = async (onMessage) => {
   try {
 
     const response = await fetch(
-      "https://smart-parking-app-4on2.vercel.app/api/v1/parking/"
+      `${BASE_API_URL}/v1/slots/`
     );
 
-    const text = await response.text();
+    if (!response.ok) {
 
-    try {
-
-      const data = JSON.parse(text);
-
-      console.log(
-        "Parking Data:",
-        data
-      );
-
-      onMessage?.(data);
-
-    } catch {
-
-      console.error(
-        "API did not return JSON:",
-        text
+      throw new Error(
+        `HTTP Error: ${response.status}`
       );
     }
+
+    const data = await response.json();
+
+    console.log(
+      "Parking Data:",
+      data
+    );
+
+    // Send data to component
+    onMessage?.(data);
 
   } catch (err) {
 
@@ -54,8 +58,10 @@ export const connectWebSocket = (onMessage) => {
     "Polling started"
   );
 
+  // Initial fetch
   fetchParkingData(onMessage);
 
+  // Auto refresh every 5 seconds
   pollingInterval = setInterval(() => {
 
     fetchParkingData(onMessage);
@@ -80,8 +86,6 @@ export const disconnectWebSocket = () => {
     "Polling stopped"
   );
 };
-
-
 
 
 
