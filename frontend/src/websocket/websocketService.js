@@ -6,7 +6,7 @@ let pollingInterval = null;
 // =====================================================
 
 const API_BASE_URL =
-  "https://smart-parking-app-4on2.vercel.app/api/v1";
+  "https://smart-parking-app-hazel.vercel.app/api/v1";
 
 
 // =====================================================

@@ -6,7 +6,7 @@ import axios from "axios";
 
 const baseURL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://smart-parking-app-4on2.vercel.app/api/v1/auth";
+  "https://smart-parking-app-hazel.vercel.app/api/v1/auth";
   
 
 // ======================================================
