@@ -2,11 +2,11 @@ let pollingInterval = null;
 
 
 // =====================================================
-// BASE API URL
+// API BASE URL
 // =====================================================
 
-const BASE_API_URL =
-  "https://smart-parking-app-4on2.vercel.app/api";
+const API_BASE_URL =
+  "https://smart-parking-app-4on2.vercel.app/api/v1";
 
 
 // =====================================================
@@ -18,7 +18,7 @@ const fetchParkingData = async (onMessage) => {
   try {
 
     const response = await fetch(
-      `${BASE_API_URL}/v1/slots/`
+      `${API_BASE_URL}/slots/`
     );
 
     if (!response.ok) {
@@ -35,7 +35,6 @@ const fetchParkingData = async (onMessage) => {
       data
     );
 
-    // Send data to component
     onMessage?.(data);
 
   } catch (err) {
@@ -58,10 +57,8 @@ export const connectWebSocket = (onMessage) => {
     "Polling started"
   );
 
-  // Initial fetch
   fetchParkingData(onMessage);
 
-  // Auto refresh every 5 seconds
   pollingInterval = setInterval(() => {
 
     fetchParkingData(onMessage);
@@ -86,157 +83,3 @@ export const disconnectWebSocket = () => {
     "Polling stopped"
   );
 };
-
-
-
-
-
-
-
-
-
-
-// let socket = null;
-
-// let reconnectTimeout = null;
-
-// let manuallyClosed = false;
-
-
-// // =====================================================
-// // CONNECT
-// // =====================================================
-
-// export const connectWebSocket = (onMessage) => {
-
-//   // Prevent duplicate sockets
-//   if (
-//     socket &&
-//     (
-//       socket.readyState === WebSocket.OPEN ||
-//       socket.readyState === WebSocket.CONNECTING
-//     )
-//   ) {
-
-//     return socket;
-//   }
-
-//   manuallyClosed = false;
-
-//   const wsUrl =
-//     
-//    https://smart-parking-app-4on2.vercel.app
-//   console.log(
-//     "Connecting WebSocket:",
-//     wsUrl
-//   );
-
-//   socket = new WebSocket(wsUrl);
-
-
-//   // =====================================================
-//   // OPEN
-//   // =====================================================
-
-//   socket.onopen = () => {
-
-//     console.log(
-//       "WebSocket connected"
-//     );
-//   };
-
-
-//   // =====================================================
-//   // MESSAGE
-//   // =====================================================
-
-//   socket.onmessage = (event) => {
-
-//     try {
-
-//       const data = JSON.parse(
-//         event.data
-//       );
-
-//       console.log(
-//         "WebSocket message:",
-//         data
-//       );
-
-//       onMessage?.(data);
-
-//     } catch (err) {
-
-//       console.error(
-//         "Invalid websocket message",
-//         err
-//       );
-//     }
-//   };
-
-
-//   // =====================================================
-//   // ERROR
-//   // =====================================================
-
-//   socket.onerror = (err) => {
-
-//     console.error(
-//       "WebSocket error",
-//       err
-//     );
-//   };
-
-
-//   // =====================================================
-//   // CLOSE
-//   // =====================================================
-
-//   socket.onclose = () => {
-
-//     console.warn(
-//       "WebSocket disconnected"
-//     );
-
-//     socket = null;
-
-//     // Prevent infinite reconnect loop
-//     if (!manuallyClosed) {
-
-//       clearTimeout(
-//         reconnectTimeout
-//       );
-
-//       reconnectTimeout = setTimeout(() => {
-
-//         connectWebSocket(
-//           onMessage
-//         );
-
-//       }, 5000);
-//     }
-//   };
-
-//   return socket;
-// };
-
-
-// // =====================================================
-// // DISCONNECT
-// // =====================================================
-
-// export const disconnectWebSocket = () => {
-
-//   manuallyClosed = true;
-
-//   clearTimeout(
-//     reconnectTimeout
-//   );
-
-//   if (socket) {
-
-//     socket.close();
-
-//     socket = null;
-//   }
-// };
