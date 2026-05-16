@@ -10,7 +10,7 @@ const API_BASE_URL =
 
 
 // =====================================================
-// FETCH PARKING SLOT DATA
+// FETCH SLOT DATA
 // =====================================================
 
 const fetchParkingData = async (onMessage) => {

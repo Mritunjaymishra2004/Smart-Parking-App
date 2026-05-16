@@ -6,7 +6,7 @@ let socket = null;
 // =====================================================
 
 const BASE_WS_URL =
-  "wss://smart-parking-app-4on2.vercel.app";
+  "wss://smart-parking-app-hazel.vercel.app";
 
 
 // =====================================================
