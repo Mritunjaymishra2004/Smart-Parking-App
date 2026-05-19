@@ -5,11 +5,14 @@ import {
 } from "react-router-dom";
 
 import {
-  Bell,
   Wifi,
   WifiOff,
-  Search,
+  Activity,
 } from "lucide-react";
+
+import {
+  useMemo,
+} from "react";
 
 import {
   useAuth,
@@ -19,7 +22,22 @@ import {
   useWebSocket,
 } from "../../websocket/WebSocketContext";
 
-import ProfileMenu from "./ProfileMenu";
+import {
+  useNotification,
+} from "../../context/NotificationContext";
+
+import GlobalSearch
+  from "../search/GlobalSearch";
+
+import ThemeToggle
+  from "../ui/ThemeToggle";
+
+import NotificationDropdown
+  from "../notifications/NotificationDropdown";
+
+import ProfileDropdown
+  from "../profile/ProfileDropdown";
+
 
 // ======================================================
 // NAVBAR
@@ -33,12 +51,18 @@ export default function Navbar() {
 
   const {
     user,
-    viewRole,
+    viewRole = "user",
   } = useAuth();
 
   const {
     connected,
   } = useWebSocket();
+
+  const {
+    notifications = [],
+    clearNotifications,
+    markAllRead,
+  } = useNotification();
 
   const navigate =
     useNavigate();
@@ -46,27 +70,31 @@ export default function Navbar() {
   const location =
     useLocation();
 
+
   // ====================================================
   // ACTIVE LINK
   // ====================================================
 
-  const isActive = (
-    path
-  ) => {
+  const isActive =
+    (path) => {
 
-    return location.pathname === path
+      return location.pathname
+        .startsWith(path)
 
-      ? `
-        text-emerald-400
-        bg-emerald-500/10
-      `
+        ? `
+          text-emerald-400
+          bg-emerald-500/10
+          border
+          border-emerald-500/20
+        `
 
-      : `
-        text-slate-300
-        hover:text-emerald-400
-        hover:bg-slate-800/70
-      `;
-  };
+        : `
+          text-slate-300
+          hover:text-white
+          hover:bg-slate-800/70
+        `;
+    };
+
 
   // ====================================================
   // NAV LINKS
@@ -98,20 +126,88 @@ export default function Navbar() {
     },
 
     {
-      to: "/admin/map",
-      label: "Live Map",
+      to: "/admin/analytics",
+      label: "Analytics",
     },
 
     {
-      to: "/admin/violations",
-      label: "Violations",
+      to: "/admin/reports",
+      label: "Reports",
+    },
+
+    {
+      to: "/admin/map",
+      label: "Live Map",
     },
   ];
 
   const navLinks =
     viewRole === "admin"
+
       ? adminLinks
+
       : userLinks;
+
+
+  // ====================================================
+  // SEARCH DATA
+  // ====================================================
+
+  const searchData =
+    useMemo(() => [
+
+      {
+        id: 1,
+        name:
+          "Admin Dashboard",
+        route:
+          "/admin",
+        type:
+          "dashboard",
+      },
+
+      {
+        id: 2,
+        name:
+          "Parking Slots",
+        route:
+          "/slots",
+        type:
+          "slots",
+      },
+
+      {
+        id: 3,
+        name:
+          "Analytics",
+        route:
+          "/admin/analytics",
+        type:
+          "analytics",
+      },
+
+      {
+        id: 4,
+        name:
+          "Reports",
+        route:
+          "/admin/reports",
+        type:
+          "reports",
+      },
+
+      {
+        id: 5,
+        name:
+          "Payments",
+        route:
+          "/admin/payments",
+        type:
+          "payments",
+      },
+
+    ], []);
+
 
   // ====================================================
   // UI
@@ -121,19 +217,24 @@ export default function Navbar() {
 
     <nav className="
       h-16
+
       px-4
       sm:px-6
+
       flex
       items-center
       justify-between
+
       bg-slate-900/70
       backdrop-blur-xl
+
       border-b
       border-slate-800
+
       text-white
+
       relative
-      overflow-visible
-      z-[1000]
+      z-40
     ">
 
       {/* ========================================== */}
@@ -143,7 +244,9 @@ export default function Navbar() {
       <div className="
         flex
         items-center
-        gap-8
+        gap-6
+
+        min-w-0
       ">
 
         {/* ====================================== */}
@@ -151,34 +254,48 @@ export default function Navbar() {
         {/* ====================================== */}
 
         <div
+
           onClick={() =>
             navigate("/")
           }
+
           className="
             flex
             items-center
             gap-3
+
             cursor-pointer
-            select-none
+            shrink-0
           "
         >
 
           <div className="
             w-10
             h-10
+
             rounded-xl
+
             bg-emerald-500
+
             text-black
             font-bold
+
             flex
             items-center
             justify-center
+
             shadow-lg
           ">
+
             P
+
           </div>
 
-          <div className="hidden sm:block">
+
+          <div className="
+            hidden
+            sm:block
+          ">
 
             <h1 className="
               text-lg
@@ -186,7 +303,9 @@ export default function Navbar() {
               text-emerald-400
               leading-none
             ">
+
               Smart Parking
+
             </h1>
 
             <p className="
@@ -195,11 +314,12 @@ export default function Navbar() {
               mt-1
             ">
 
-              {viewRole === "admin"
+              {
+                viewRole === "admin"
 
-                ? "Admin Control Center"
+                  ? "Admin Control Center"
 
-                : "Smart Parking Platform"
+                  : "Smart Parking Platform"
               }
 
             </p>
@@ -208,15 +328,16 @@ export default function Navbar() {
 
         </div>
 
+
         {/* ====================================== */}
-        {/* DESKTOP NAV */}
+        {/* NAV LINKS */}
         {/* ====================================== */}
 
         {user && (
 
           <div className="
             hidden
-            lg:flex
+            xl:flex
             items-center
             gap-2
           ">
@@ -225,6 +346,7 @@ export default function Navbar() {
               (link) => (
 
                 <Link
+
                   key={link.to}
 
                   to={link.to}
@@ -232,9 +354,12 @@ export default function Navbar() {
                   className={`
                     px-4
                     py-2
+
                     rounded-xl
+
                     text-sm
                     font-medium
+
                     transition-all
                     duration-200
 
@@ -255,6 +380,7 @@ export default function Navbar() {
 
       </div>
 
+
       {/* ========================================== */}
       {/* RIGHT */}
       {/* ========================================== */}
@@ -263,6 +389,8 @@ export default function Navbar() {
         flex
         items-center
         gap-3
+
+        min-w-0
       ">
 
         {/* ====================================== */}
@@ -273,86 +401,77 @@ export default function Navbar() {
 
           <div className="
             hidden
-            md:flex
-            items-center
-            gap-2
-            bg-slate-800/70
-            border
-            border-slate-700
-            px-3
-            py-2
-            rounded-xl
-            min-w-[220px]
+            lg:block
+            w-[320px]
           ">
 
-            <Search
-              size={16}
-              className="
-                text-slate-400
-              "
-            />
-
-            <input
-              type="text"
-              placeholder="Search..."
-              className="
-                bg-transparent
-                outline-none
-                text-sm
-                w-full
-                placeholder:text-slate-500
-              "
+            <GlobalSearch
+              data={searchData}
             />
 
           </div>
         )}
 
+
         {/* ====================================== */}
-        {/* WEBSOCKET STATUS */}
+        {/* REALTIME */}
         {/* ====================================== */}
 
         {user && (
 
           <div className="
             hidden
-            sm:flex
+            md:flex
+
             items-center
             gap-2
+
             px-3
             py-2
+
             rounded-xl
+
             border
             border-slate-700
+
             bg-slate-800/60
           ">
 
-            {connected ? (
+            {
+              connected
 
-              <Wifi
-                size={16}
-                className="
-                  text-emerald-400
-                "
-              />
+                ? (
 
-            ) : (
+                  <Wifi
+                    size={16}
+                    className="
+                      text-emerald-400
+                    "
+                  />
+                )
 
-              <WifiOff
-                size={16}
-                className="
-                  text-red-400
-                "
-              />
-            )}
+                : (
+
+                  <WifiOff
+                    size={16}
+                    className="
+                      text-red-400
+                    "
+                  />
+                )
+            }
 
             <span className="
               text-xs
               text-slate-300
             ">
 
-              {connected
-                ? "Live"
-                : "Offline"
+              {
+                connected
+
+                  ? "Realtime"
+
+                  : "Offline"
               }
 
             </span>
@@ -360,47 +479,91 @@ export default function Navbar() {
           </div>
         )}
 
+
+        {/* ====================================== */}
+        {/* LIVE */}
+        {/* ====================================== */}
+
+        {user && (
+
+          <div className="
+            hidden
+            xl:flex
+
+            items-center
+            gap-2
+
+            px-3
+            py-2
+
+            rounded-xl
+
+            border
+            border-slate-700
+
+            bg-slate-800/60
+          ">
+
+            <Activity
+              size={16}
+              className="
+                text-blue-400
+              "
+            />
+
+            <span className="
+              text-xs
+              text-slate-300
+            ">
+
+              Live Analytics
+
+            </span>
+
+          </div>
+        )}
+
+
+        {/* ====================================== */}
+        {/* THEME */}
+        {/* ====================================== */}
+
+        <ThemeToggle
+          iconOnly
+        />
+
+
         {/* ====================================== */}
         {/* NOTIFICATIONS */}
         {/* ====================================== */}
 
         {user && (
 
-          <button className="
-            relative
-            p-2.5
-            rounded-xl
-            bg-slate-800/60
-            border
-            border-slate-700
-            hover:bg-slate-700
-            transition
-          ">
+          <NotificationDropdown
 
-            <Bell
-              size={18}
-            />
+            notifications={
+              notifications
+            }
 
-            <span className="
-              absolute
-              top-1
-              right-1
-              w-2
-              h-2
-              rounded-full
-              bg-emerald-400
-            " />
+            onClearAll={
+              clearNotifications
+            }
 
-          </button>
+            onMarkAllRead={
+              markAllRead
+            }
+
+          />
         )}
 
+
         {/* ====================================== */}
-        {/* AUTH */}
+        {/* PROFILE */}
         {/* ====================================== */}
 
         {user ? (
 
-          <ProfileMenu />
+          <ProfileDropdown />
 
         ) : (
 
@@ -411,40 +574,59 @@ export default function Navbar() {
           ">
 
             <button
+
               onClick={() =>
                 navigate("/login")
               }
+
               className="
                 px-4
                 py-2
+
                 rounded-xl
+
                 border
                 border-emerald-500
+
                 text-emerald-400
+
                 hover:bg-emerald-500
                 hover:text-black
+
                 transition
               "
             >
+
               Login
+
             </button>
 
+
             <button
+
               onClick={() =>
                 navigate("/signup")
               }
+
               className="
                 px-4
                 py-2
+
                 rounded-xl
+
                 bg-emerald-500
+
                 text-black
                 font-medium
+
                 hover:bg-emerald-600
+
                 transition
               "
             >
+
               Sign Up
+
             </button>
 
           </div>
@@ -455,183 +637,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { Link, useNavigate, useLocation } from "react-router-dom";
-// import { useAuth } from "../../context/AuthContext";
-// import { useState } from "react";
-// import ProfileMenu from "./ProfileMenu";
-
-// export default function Navbar() {
-//   const { user, viewRole } = useAuth();
-//   const navigate = useNavigate();
-//   const location = useLocation();
-
-//   const [mobileOpen, setMobileOpen] = useState(false);
-
-//   // ===============================
-//   // 🔹 ACTIVE LINK HELPER
-//   // ===============================
-//   const isActive = (path) =>
-//     location.pathname === path
-//       ? "text-emerald-400"
-//       : "text-slate-300 hover:text-emerald-400";
-
-//   return (
-//     <nav className="h-16 bg-black/60 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-6 shadow-lg text-white fixed top-0 w-full z-50">
-
-//       {/* ================= LOGO ================= */}
-//       <div
-//         className="flex items-center gap-3 cursor-pointer"
-//         onClick={() => navigate("/")}
-//       >
-//         <div className="w-9 h-9 bg-emerald-500 text-black rounded-lg flex items-center justify-center font-bold">
-//           P
-//         </div>
-
-//         <div>
-//           <h1 className="text-xl font-bold text-emerald-400">
-//             Smart Parking
-//           </h1>
-//           {user && (
-//             <span className="text-xs text-slate-400">
-//               {viewRole === "admin" ? "Admin Mode" : "User Mode"}
-//             </span>
-//           )}
-//         </div>
-//       </div>
-
-//       {/* ================= DESKTOP NAV ================= */}
-//       <div className="hidden md:flex items-center gap-8">
-
-//         <Link to="/dashboard" className={isActive("/dashboard")}>
-//           Dashboard
-//         </Link>
-
-//         {viewRole === "user" && (
-//           <>
-//             <Link to="/slots" className={isActive("/slots")}>
-//               Live Slots
-//             </Link>
-
-//             <Link to="/map" className={isActive("/map")}>
-//               Live Map
-//             </Link>
-
-//             <Link to="/pricing" className={isActive("/pricing")}>
-//               Pricing
-//             </Link>
-//           </>
-//         )}
-
-//         {viewRole === "admin" && (
-//           <>
-//             <Link to="/admin" className={isActive("/admin")}>
-//               Admin Dashboard
-//             </Link>
-
-//             <Link to="/admin/live" className={isActive("/admin/live")}>
-//               Live Control
-//             </Link>
-
-//             <Link to="/admin/violations" className={isActive("/admin/violations")}>
-//               Violations
-//             </Link>
-//           </>
-//         )}
-//       </div>
-
-//       {/* ================= RIGHT ================= */}
-//       <div className="flex items-center gap-4">
-
-//         {/* MOBILE MENU BUTTON */}
-//         <button
-//           onClick={() => setMobileOpen(!mobileOpen)}
-//           className="md:hidden text-slate-300"
-//         >
-//           ☰
-//         </button>
-
-//         {user ? (
-//           <ProfileMenu />
-//         ) : (
-//           <>
-//             <button
-//               onClick={() => navigate("/login")}
-//               className="px-4 py-1.5 border border-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-black transition"
-//             >
-//               Login
-//             </button>
-
-//             <button
-//               onClick={() => navigate("/signup")}
-//               className="px-4 py-1.5 bg-emerald-500 text-black rounded-lg hover:bg-emerald-600 transition"
-//             >
-//               Sign Up
-//             </button>
-//           </>
-//         )}
-//       </div>
-
-//       {/* ================= MOBILE MENU ================= */}
-//       {mobileOpen && (
-//         <div className="absolute top-16 left-0 w-full bg-black border-t border-slate-800 flex flex-col items-center py-4 gap-4 md:hidden">
-
-//           <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
-//             Dashboard
-//           </Link>
-
-//           {viewRole === "user" && (
-//             <>
-//               <Link to="/slots" onClick={() => setMobileOpen(false)}>
-//                 Live Slots
-//               </Link>
-
-//               <Link to="/map" onClick={() => setMobileOpen(false)}>
-//                 Live Map
-//               </Link>
-
-//               <Link to="/pricing" onClick={() => setMobileOpen(false)}>
-//                 Pricing
-//               </Link>
-//             </>
-//           )}
-
-//           {viewRole === "admin" && (
-//             <>
-//               <Link to="/admin" onClick={() => setMobileOpen(false)}>
-//                 Admin Dashboard
-//               </Link>
-
-//               <Link to="/admin/live" onClick={() => setMobileOpen(false)}>
-//                 Live Control
-//               </Link>
-
-//               <Link to="/admin/violations" onClick={() => setMobileOpen(false)}>
-//                 Violations
-//               </Link>
-//             </>
-//           )}
-
-//         </div>
-//       )}
-//     </nav>
-//   );
-// }

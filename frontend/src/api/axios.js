@@ -1,25 +1,141 @@
 import axios from "axios";
 
+
 // ======================================================
 // BASE URL
 // ======================================================
 
 const baseURL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://smart-parking-app-hazel.vercel.app/api/v1/auth";
-  
+
+  import.meta.env
+    .VITE_API_BASE_URL
+
+  ||
+
+  "http://localhost:8000/api/v1";
+
 
 // ======================================================
 // AXIOS INSTANCE
 // ======================================================
 
 const api = axios.create({
+
   baseURL,
 
+  timeout: 15000,
+
   headers: {
-    "Content-Type": "application/json",
+
+    "Content-Type":
+      "application/json",
   },
 });
+
+
+// ======================================================
+// TOKEN HELPERS
+// ======================================================
+
+const getAccessToken =
+  () => {
+
+    try {
+
+      return localStorage.getItem(
+        "access"
+      );
+
+    } catch {
+
+      return null;
+    }
+  };
+
+
+const getRefreshToken =
+  () => {
+
+    try {
+
+      return localStorage.getItem(
+        "refresh"
+      );
+
+    } catch {
+
+      return null;
+    }
+  };
+
+
+const setAccessToken =
+  (token) => {
+
+    try {
+
+      localStorage.setItem(
+        "access",
+        token
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Failed to save token",
+        error
+      );
+    }
+  };
+
+
+const clearAuth =
+  () => {
+
+    try {
+
+      localStorage.removeItem(
+        "access"
+      );
+
+      localStorage.removeItem(
+        "refresh"
+      );
+
+      localStorage.removeItem(
+        "user"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Failed to clear auth",
+        error
+      );
+    }
+  };
+
+
+// ======================================================
+// SAFE LOGIN REDIRECT
+// ======================================================
+
+const redirectToLogin =
+  () => {
+
+    if (
+
+      window.location.pathname !==
+      "/login"
+
+    ) {
+
+      window.location.replace(
+        "/login"
+      );
+    }
+  };
+
 
 // ======================================================
 // REQUEST INTERCEPTOR
@@ -30,7 +146,11 @@ api.interceptors.request.use(
   (config) => {
 
     const accessToken =
-      localStorage.getItem("access");
+      getAccessToken();
+
+    // ==============================================
+    // AUTH HEADER
+    // ==============================================
 
     if (accessToken) {
 
@@ -41,38 +161,93 @@ api.interceptors.request.use(
     return config;
   },
 
-  (error) => Promise.reject(error)
+  (error) => {
+
+    return Promise.reject(
+      error
+    );
+  }
 );
 
+
 // ======================================================
-// TOKEN REFRESH LOGIC
+// REFRESH STATE
 // ======================================================
 
 let isRefreshing = false;
 
 let failedQueue = [];
 
+
 // ======================================================
-// PROCESS FAILED REQUESTS
+// PROCESS QUEUE
 // ======================================================
 
 const processQueue = (
+
   error,
+
   token = null
+
 ) => {
 
-  failedQueue.forEach((prom) => {
+  failedQueue.forEach(
+    (promise) => {
 
-    if (error) {
-      prom.reject(error);
+      if (error) {
 
-    } else {
-      prom.resolve(token);
+        promise.reject(
+          error
+        );
+
+      } else {
+
+        promise.resolve(
+          token
+        );
+      }
     }
-  });
+  );
 
   failedQueue = [];
 };
+
+
+// ======================================================
+// REFRESH TOKEN
+// ======================================================
+
+const refreshAccessToken =
+  async () => {
+
+    const refreshToken =
+      getRefreshToken();
+
+    if (!refreshToken) {
+
+      throw new Error(
+        "No refresh token"
+      );
+    }
+
+    const response =
+      await axios.post(
+
+        `${baseURL}/auth/refresh/`,
+
+        {
+          refresh:
+            refreshToken,
+        },
+
+        {
+          timeout: 10000,
+        }
+      );
+
+    return response.data.access;
+  };
+
 
 // ======================================================
 // RESPONSE INTERCEPTOR
@@ -80,44 +255,86 @@ const processQueue = (
 
 api.interceptors.response.use(
 
-  (response) => response,
+  (response) => {
+
+    return response;
+  },
 
   async (error) => {
 
     const originalRequest =
       error.config;
 
-    // =========================================
+
+    // ==============================================
+    // NO RESPONSE
+    // ==============================================
+
+    if (!error.response) {
+
+      console.warn(
+        "Backend unreachable"
+      );
+
+      return Promise.reject(
+        error
+      );
+    }
+
+
+    // ==============================================
     // TOKEN EXPIRED
-    // =========================================
+    // ==============================================
 
     if (
-      error.response?.status === 401 &&
-      !originalRequest._retry
+
+      error.response.status === 401 &&
+
+      !originalRequest._retry &&
+
+      !originalRequest.url.includes(
+        "/auth/refresh/"
+      )
+
     ) {
 
-      // =====================================
-      // ALREADY REFRESHING
-      // =====================================
+      // ============================================
+      // WAIT FOR ACTIVE REFRESH
+      // ============================================
 
       if (isRefreshing) {
 
         return new Promise(
-          (resolve, reject) => {
+
+          (
+            resolve,
+
+            reject
+          ) => {
 
             failedQueue.push({
+
               resolve,
+
               reject,
             });
           }
+
         ).then((token) => {
 
           originalRequest.headers.Authorization =
             `Bearer ${token}`;
 
-          return api(originalRequest);
+          return api(
+            originalRequest
+          );
         });
       }
+
+
+      // ============================================
+      // START REFRESH
+      // ============================================
 
       originalRequest._retry = true;
 
@@ -125,48 +342,14 @@ api.interceptors.response.use(
 
       try {
 
-        const refreshToken =
-          localStorage.getItem("refresh");
-
-        // =====================================
-        // NO REFRESH TOKEN
-        // =====================================
-
-        if (!refreshToken) {
-
-          localStorage.clear();
-
-          window.location.href =
-            "/login";
-
-          return Promise.reject(error);
-        }
-
-        // =====================================
-        // REFRESH ACCESS TOKEN
-        // =====================================
-
-        const response =
-          await axios.post(
-            `${baseURL}/auth/refresh/`,
-            {
-              refresh: refreshToken,
-            }
-          );
-
         const newAccess =
-          response.data.access;
+          await refreshAccessToken();
 
-        // =====================================
-        // SAVE NEW TOKEN
-        // =====================================
-
-        localStorage.setItem(
-          "access",
+        setAccessToken(
           newAccess
         );
 
-        api.defaults.headers.Authorization =
+        api.defaults.headers.common.Authorization =
           `Bearer ${newAccess}`;
 
         originalRequest.headers.Authorization =
@@ -177,16 +360,23 @@ api.interceptors.response.use(
           newAccess
         );
 
-        return api(originalRequest);
+        return api(
+          originalRequest
+        );
 
       } catch (refreshError) {
 
-        processQueue(refreshError);
+        console.error(
+          "Refresh token expired"
+        );
 
-        localStorage.clear();
+        processQueue(
+          refreshError
+        );
 
-        window.location.href =
-          "/login";
+        clearAuth();
+
+        redirectToLogin();
 
         return Promise.reject(
           refreshError
@@ -198,9 +388,52 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error);
+
+    // ==============================================
+    // FORBIDDEN
+    // ==============================================
+
+    if (
+
+      error.response.status === 403
+
+    ) {
+
+      console.warn(
+        "Permission denied"
+      );
+    }
+
+
+    // ==============================================
+    // SERVER ERROR
+    // ==============================================
+
+    if (
+
+      error.response.status >= 500
+
+    ) {
+
+      console.error(
+        "Internal server error"
+      );
+    }
+
+    return Promise.reject(
+      error
+    );
   }
 );
+
+
+// ======================================================
+// CANCEL TOKEN
+// ======================================================
+
+export const cancelTokenSource =
+  axios.CancelToken.source;
+
 
 // ======================================================
 // EXPORT

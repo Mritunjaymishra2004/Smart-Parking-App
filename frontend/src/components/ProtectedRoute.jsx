@@ -3,7 +3,14 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
+import {
+  ShieldAlert,
+} from "lucide-react";
+
+import {
+  useAuth,
+} from "../context/AuthContext";
+
 
 // ======================================================
 // LOADING SCREEN
@@ -15,21 +22,53 @@ function LoadingScreen() {
 
     <div className="
       min-h-screen
+
       flex
       items-center
       justify-center
-      bg-slate-900
+
+      bg-slate-950
       text-white
-      text-xl
-      font-semibold
     ">
-      Checking Authentication...
+
+      <div className="
+        flex
+        flex-col
+        items-center
+        gap-5
+      ">
+
+        <div className="
+          w-14
+          h-14
+
+          border-4
+          border-emerald-500
+          border-t-transparent
+
+          rounded-full
+
+          animate-spin
+        " />
+
+        <p className="
+          text-lg
+          font-semibold
+        ">
+
+          Checking Authentication...
+
+        </p>
+
+      </div>
+
     </div>
   );
 }
 
+
 // ======================================================
-// UNAUTHORIZED SCREEN
+// UNAUTHORIZED
 // ======================================================
 
 function UnauthorizedScreen() {
@@ -38,34 +77,68 @@ function UnauthorizedScreen() {
 
     <div className="
       min-h-screen
+
       flex
       flex-col
       items-center
       justify-center
+
       bg-slate-950
       text-white
+
       px-6
+      text-center
     ">
+
+      <div className="
+        w-20
+        h-20
+
+        rounded-full
+
+        bg-red-500/10
+
+        flex
+        items-center
+        justify-center
+
+        mb-6
+      ">
+
+        <ShieldAlert
+          size={40}
+          className="
+            text-red-400
+          "
+        />
+
+      </div>
 
       <h1 className="
         text-5xl
         font-bold
         mb-4
       ">
+
         403
+
       </h1>
 
       <p className="
         text-slate-300
         text-lg
+        max-w-md
       ">
+
         You are not authorized
         to access this page.
+
       </p>
 
     </div>
   );
 }
+
 
 // ======================================================
 // PROTECTED ROUTE
@@ -79,14 +152,23 @@ export default function ProtectedRoute({
 
 }) {
 
+  // ====================================================
+  // AUTH
+  // ====================================================
+
   const {
+
     user,
+
     loading,
-    isAuthenticated,
+
+    viewRole = "user",
+
   } = useAuth();
 
   const location =
     useLocation();
+
 
   // ====================================================
   // LOADING
@@ -97,17 +179,21 @@ export default function ProtectedRoute({
     return <LoadingScreen />;
   }
 
+
   // ====================================================
-  // NOT AUTHENTICATED
+  // NOT LOGGED IN
   // ====================================================
 
-  if (!isAuthenticated || !user) {
+  if (!user) {
 
     return (
 
       <Navigate
+
         to="/login"
+
         replace
+
         state={{
           from: location,
         }}
@@ -115,30 +201,39 @@ export default function ProtectedRoute({
     );
   }
 
+
   // ====================================================
   // ROLE CHECK
   // ====================================================
 
   if (role) {
 
-    // ================================================
-    // SUPPORT ARRAY OF ROLES
-    // ================================================
-
     const allowedRoles =
+
       Array.isArray(role)
+
         ? role
+
         : [role];
 
+    // ==============================================
+    // SAFE ROLE CHECK
+    // ==============================================
+
     if (
+
       !allowedRoles.includes(
-        user.role
+        viewRole
       )
+
     ) {
 
-      return <UnauthorizedScreen />;
+      return (
+        <UnauthorizedScreen />
+      );
     }
   }
+
 
   // ====================================================
   // ACCESS GRANTED
@@ -146,57 +241,3 @@ export default function ProtectedRoute({
 
   return children;
 }
-
-
-
-
-
-
-
-
-
-
-
-// import { useAuth } from "../context/AuthContext";
-// import { Navigate, useLocation } from "react-router-dom";
-
-// export default function ProtectedRoute({ children, role }) {
-//   const { user, loading } = useAuth();
-//   const location = useLocation(); // ✅ NEW
-
-//   // ===============================
-//   // 🔹 LOADING STATE (UX IMPROVED)
-//   // ===============================
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-//         Loading...
-//       </div>
-//     );
-//   }
-
-//   // ===============================
-//   // 🔹 NOT LOGGED IN
-//   // ===============================
-//   if (!user) {
-//     return (
-//       <Navigate
-//         to="/login"
-//         replace
-//         state={{ from: location }} // ✅ preserve route
-//       />
-//     );
-//   }
-
-//   // ===============================
-//   // 🔹 ROLE-BASED PROTECTION (NEW)
-//   // ===============================
-//   if (role && user.role !== role) {
-//     return <Navigate to="/dashboard" replace />;
-//   }
-
-//   // ===============================
-//   // 🔹 ALLOWED
-//   // ===============================
-//   return children;
-// }

@@ -7,91 +7,102 @@ import {
   useMemo,
 } from "react";
 
-import { useAuth } from "../../context/AuthContext";
+import {
+  RefreshCcw,
+  Wifi,
+  WifiOff,
+  Activity,
+  TrendingUp,
+  ParkingCircle,
+  Car,
+  IndianRupee,
+  ShieldCheck,
+} from "lucide-react";
 
-import { useWebSocket } from "../../websocket/WebSocketContext";
+import {
+  useAuth,
+} from "../../context/AuthContext";
 
-import DashboardLayout from "../../components/common/DashboardLayout";
+import {
+  useWebSocket,
+} from "../../websocket/WebSocketContext";
 
-import StatsCard from "../../components/dashboard/StatsCard";
+import {
+  useNotification,
+} from "../../context/NotificationContext";
+
+import DashboardLayout
+from "../../components/common/DashboardLayout";
+
+import StatCard
+from "../../components/ui/StatCard";
+
+import Button
+from "../../components/ui/Button";
+
+import EmptyState
+from "../../components/ui/EmptyState";
+
+import ChartSkeleton
+from "../../components/ui/ChartSkeleton";
+
 
 // ======================================================
-// LAZY COMPONENTS
+// CHARTS
 // ======================================================
-
-const SlotsPanel = lazy(() =>
-  import("../../components/dashboard/SlotsPanel")
-);
-
-const VehiclesPanel = lazy(() =>
-  import("../../components/dashboard/VehiclesPanel")
-);
-
-const LiveParkingMap = lazy(() =>
-  import("../../components/map/LiveParkingMap")
-);
-
-const SlotManager = lazy(() =>
-  import("../../components/admin/SlotManager")
-);
-
-const BookingManager = lazy(() =>
-  import("../../components/admin/BookingManager")
-);
 
 const RevenueChart = lazy(() =>
-  import("../../components/admin/RevenueChart")
+  import("../../components/charts/RevenueChart")
 );
 
-const SlotHeatmap = lazy(() =>
-  import("../../components/admin/SlotHeatmap")
+const BookingTrendChart = lazy(() =>
+  import("../../components/charts/BookingTrendChart")
 );
 
-const OccupancyRadar = lazy(() =>
-  import("../../components/admin/OccupancyRadar")
+const OccupancyChart = lazy(() =>
+  import("../../components/charts/OccupancyChart")
 );
 
-const DevicePanel = lazy(() =>
-  import("../../components/admin/DevicePanel")
+const SlotStatusPieChart = lazy(() =>
+  import("../../components/charts/SlotStatusPieChart")
 );
 
-const ViolationsPanel = lazy(() =>
-  import("../../components/admin/ViolationsPanel")
-);
 
-const AdminSessionsPanel = lazy(() =>
-  import("../../components/admin/AdminSessionsPanel")
-);
-
-const RevenuePanel = lazy(() =>
-  import("../../components/admin/RevenuePanel")
-);
+// ======================================================
+// SERVICES
+// ======================================================
 
 import {
   getAdminStats,
-} from "../../services/admin";
+} from "../../services/analyticsService";
+
 
 // ======================================================
-// PANEL WRAPPER
+// PANEL
 // ======================================================
 
 function Panel({
+
   title,
+
   children,
+
   className = "",
+
+  action,
+
 }) {
 
   return (
 
-    <div className={`
+    <div className="
       bg-slate-900
       border
       border-slate-800
       rounded-2xl
-      p-4
+      p-5
       shadow-lg
-      ${className}
-    `}>
+    ">
 
       {title && (
 
@@ -99,7 +110,7 @@ function Panel({
           flex
           items-center
           justify-between
-          mb-4
+          mb-5
         ">
 
           <h2 className="
@@ -107,8 +118,12 @@ function Panel({
             font-semibold
             text-white
           ">
+
             {title}
+
           </h2>
+
+          {action}
 
         </div>
       )}
@@ -119,8 +134,9 @@ function Panel({
   );
 }
 
+
 // ======================================================
-// LOADING FALLBACK
+// LOADING PANEL
 // ======================================================
 
 function LoadingPanel() {
@@ -128,15 +144,37 @@ function LoadingPanel() {
   return (
 
     <div className="
-      h-48
-      rounded-2xl
-      bg-slate-900
-      border
-      border-slate-800
-      animate-pulse
-    " />
+      grid
+      grid-cols-1
+      xl:grid-cols-2
+      gap-6
+    ">
+
+      <ChartSkeleton />
+      <ChartSkeleton />
+      <ChartSkeleton />
+      <ChartSkeleton />
+
+    </div>
   );
 }
+
+
+// ======================================================
+// SAFE ARRAY
+// ======================================================
+
+const safeArray = (
+  value
+) => {
+
+  return Array.isArray(value)
+
+    ? value
+
+    : [];
+};
+
 
 // ======================================================
 // ADMIN DASHBOARD
@@ -144,21 +182,57 @@ function LoadingPanel() {
 
 export default function AdminDashboard() {
 
-  const {
-    user,
-    loading: authLoading,
-  } = useAuth();
+  // ====================================================
+  // AUTH
+  // ====================================================
 
   const {
-    lastMessage,
+
+    user,
+
+    loading: authLoading,
+
+  } = useAuth();
+
+
+  // ====================================================
+  // WEBSOCKET
+  // ====================================================
+
+  const {
+
     connected,
+
+    reconnecting,
+
+    analytics = {},
+
+    bookings = [],
+
+    slots = [],
+
+    notifications = [],
+
   } = useWebSocket();
+
+
+  // ====================================================
+  // NOTIFICATION
+  // ====================================================
+
+  const {
+
+    error: showError,
+
+  } = useNotification();
+
 
   // ====================================================
   // STATE
   // ====================================================
 
-  const [stats, setStats] =
+  const [stats,
+    setStats] =
     useState({
 
       total_slots: 0,
@@ -174,11 +248,290 @@ export default function AdminDashboard() {
       today_revenue: 0,
     });
 
-  const [loadingStats, setLoadingStats] =
+  const [loadingStats,
+    setLoadingStats] =
     useState(true);
 
+  const [pageError,
+    setPageError] =
+    useState("");
+
+
   // ====================================================
-  // AUTH GUARD
+  // LOAD STATS
+  // ====================================================
+
+  const loadStats =
+    useCallback(async () => {
+
+      try {
+
+        setLoadingStats(true);
+
+        setPageError("");
+
+        const response =
+          await getAdminStats();
+
+        setStats({
+
+          total_slots:
+            response?.data?.total_slots || 0,
+
+          occupied_slots:
+            response?.data?.occupied_slots || 0,
+
+          free_slots:
+            response?.data?.free_slots || 0,
+
+          active_sessions:
+            response?.data?.active_sessions || 0,
+
+          total_revenue:
+            response?.data?.total_revenue || 0,
+
+          today_revenue:
+            response?.data?.today_revenue || 0,
+        });
+
+      } catch (error) {
+
+        console.error(
+          "Dashboard stats error:",
+          error
+        );
+
+        setPageError(
+          "Failed to load dashboard statistics"
+        );
+
+        showError(
+          "Dashboard load failed"
+        );
+
+      } finally {
+
+        setLoadingStats(false);
+      }
+
+    }, [showError]);
+
+
+  // ====================================================
+  // INITIAL LOAD
+  // ====================================================
+
+  useEffect(() => {
+
+    loadStats();
+
+  }, [loadStats]);
+
+
+  // ====================================================
+  // REALTIME ANALYTICS
+  // ====================================================
+
+  useEffect(() => {
+
+    if (
+      analytics?.dashboard
+    ) {
+
+      setStats((prev) => ({
+
+        ...prev,
+
+        ...analytics.dashboard,
+      }));
+    }
+
+  }, [analytics]);
+
+
+  // ====================================================
+  // OCCUPANCY %
+  // ====================================================
+
+  const occupancyPercent =
+    useMemo(() => {
+
+      if (!stats.total_slots) {
+
+        return 0;
+      }
+
+      return Math.round(
+
+        (
+          stats.occupied_slots /
+
+          stats.total_slots
+        ) * 100
+      );
+
+    }, [
+
+      stats.total_slots,
+
+      stats.occupied_slots,
+    ]);
+
+
+  // ====================================================
+  // SYSTEM HEALTH
+  // ====================================================
+
+  const systemHealth =
+    useMemo(() => {
+
+      if (!connected) {
+
+        return "Polling";
+      }
+
+      if (reconnecting) {
+
+        return "Reconnecting";
+      }
+
+      return "Healthy";
+
+    }, [
+
+      connected,
+
+      reconnecting,
+    ]);
+
+
+  // ====================================================
+  // REVENUE DATA
+  // ====================================================
+
+  const revenueData =
+    useMemo(() => [
+
+      {
+        day: "Mon",
+        revenue: 200,
+      },
+
+      {
+        day: "Tue",
+        revenue: 400,
+      },
+
+      {
+        day: "Wed",
+        revenue: 350,
+      },
+
+      {
+        day: "Thu",
+        revenue: 500,
+      },
+
+      {
+        day: "Fri",
+        revenue: 700,
+      },
+
+      {
+        day: "Sat",
+        revenue: 900,
+      },
+
+      {
+        day: "Sun",
+        revenue:
+          stats.today_revenue || 0,
+      },
+
+    ], [
+
+      stats.today_revenue,
+    ]);
+
+
+  // ====================================================
+  // SLOT STATUS
+  // ====================================================
+
+  const slotStatusData =
+    useMemo(() => [
+
+      {
+        name: "Occupied",
+        value:
+          stats.occupied_slots || 0,
+      },
+
+      {
+        name: "Available",
+        value:
+          stats.free_slots || 0,
+      },
+
+    ], [
+
+      stats.occupied_slots,
+
+      stats.free_slots,
+    ]);
+
+
+  // ====================================================
+  // BOOKING TREND
+  // ====================================================
+
+  const bookingTrendData =
+    useMemo(() => {
+
+      return safeArray(bookings);
+
+    }, [bookings]);
+
+
+  // ====================================================
+  // OCCUPANCY DATA
+  // ====================================================
+
+  const occupancyData =
+    useMemo(() => {
+
+      return [
+
+        {
+          time: "Now",
+          occupied:
+            stats.occupied_slots,
+
+          free:
+            stats.free_slots,
+        },
+      ];
+
+    }, [
+
+      stats.occupied_slots,
+
+      stats.free_slots,
+    ]);
+
+
+  // ====================================================
+  // RECENT ACTIVITY
+  // ====================================================
+
+  const recentActivities =
+    safeArray(
+      notifications
+    ).slice(0, 6);
+
+
+  // ====================================================
+  // AUTH LOADING
   // ====================================================
 
   if (authLoading) {
@@ -193,16 +546,19 @@ export default function AdminDashboard() {
         bg-slate-950
         text-white
       ">
-        Loading dashboard...
+
+        Loading Dashboard...
+
       </div>
     );
   }
 
-  if (
-    !user ||
 
-    user.role !== "admin"
-  ) {
+  // ====================================================
+  // USER CHECK
+  // ====================================================
+
+  if (!user) {
 
     return (
 
@@ -212,122 +568,32 @@ export default function AdminDashboard() {
         items-center
         justify-center
         bg-slate-950
-        text-red-400
-        text-xl
+        text-white
       ">
-        Access Denied
+
+        Loading user...
+
       </div>
     );
   }
 
-  // ====================================================
-  // LOAD STATS
-  // ====================================================
-
-  const loadStats =
-    useCallback(async () => {
-
-      try {
-
-        const response =
-          await getAdminStats();
-
-        setStats(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Admin stats error",
-          error
-        );
-
-      } finally {
-
-        setLoadingStats(false);
-      }
-
-    }, []);
 
   // ====================================================
-  // INITIAL LOAD
+  // LOADING
   // ====================================================
 
-  useEffect(() => {
+  if (loadingStats) {
 
-    loadStats();
+    return (
 
-  }, [loadStats]);
+      <DashboardLayout>
 
-  // ====================================================
-  // LIVE WEBSOCKET UPDATES
-  // ====================================================
+        <LoadingPanel />
 
-  useEffect(() => {
+      </DashboardLayout>
+    );
+  }
 
-    if (!lastMessage) return;
-
-    // ================================================
-    // ADMIN LIVE STATS
-    // ================================================
-
-    if (
-      lastMessage.type ===
-      "admin_stats_update"
-    ) {
-
-      setStats(
-        lastMessage.stats
-      );
-    }
-
-  }, [lastMessage]);
-
-  // ====================================================
-  // REVENUE DATA
-  // ====================================================
-
-  const revenueData =
-    useMemo(() => [
-
-      {
-        day: "Mon",
-        revenue:
-          stats.today_revenue || 0,
-      },
-
-      {
-        day: "Tue",
-        revenue: 0,
-      },
-
-      {
-        day: "Wed",
-        revenue: 0,
-      },
-
-      {
-        day: "Thu",
-        revenue: 0,
-      },
-
-      {
-        day: "Fri",
-        revenue: 0,
-      },
-
-      {
-        day: "Sat",
-        revenue: 0,
-      },
-
-      {
-        day: "Sun",
-        revenue: 0,
-      },
-
-    ], [stats.today_revenue]);
 
   // ====================================================
   // UI
@@ -337,449 +603,309 @@ export default function AdminDashboard() {
 
     <DashboardLayout>
 
-      {/* ========================================== */}
       {/* HEADER */}
-      {/* ========================================== */}
 
       <div className="
         flex
         flex-col
-        md:flex-row
-        md:items-center
-        md:justify-between
+        xl:flex-row
+        xl:items-center
+        xl:justify-between
+        gap-5
         mb-8
-        gap-4
       ">
 
         <div>
 
-          <h1 className="
-            text-3xl
-            font-bold
-            text-white
+          <div className="
+            flex
+            items-center
+            gap-3
           ">
-            Admin Control Center
-          </h1>
+
+            <h1 className="
+              text-3xl
+              font-bold
+              text-white
+            ">
+
+              Admin Control Center
+
+            </h1>
+
+            <div className={`
+              flex
+              items-center
+              gap-2
+              px-3
+              py-1
+              rounded-full
+              text-xs
+              font-medium
+
+              ${
+                connected
+
+                  ? `
+                    bg-emerald-500/10
+                    text-emerald-400
+                  `
+
+                  : `
+                    bg-yellow-500/10
+                    text-yellow-400
+                  `
+              }
+            `}>
+
+              {
+                connected
+
+                  ? <Wifi size={14} />
+
+                  : <WifiOff size={14} />
+              }
+
+              {systemHealth}
+
+            </div>
+
+          </div>
 
           <p className="
             text-slate-400
-            mt-1
+            mt-2
           ">
-            Monitor and optimize
-            the Smart Parking platform
+
+            Realtime Smart Parking Monitoring Platform
+
           </p>
 
         </div>
 
-        {/* ====================================== */}
-        {/* SYSTEM STATUS */}
-        {/* ====================================== */}
+        <Button
 
-        <div className="
-          flex
-          items-center
-          gap-2
-          bg-slate-900
-          border
-          border-slate-800
-          px-4
-          py-2
-          rounded-xl
-        ">
+          onClick={loadStats}
 
-          <div className={`
-            w-3
-            h-3
-            rounded-full
-            ${connected
-              ? "bg-emerald-500"
-              : "bg-red-500"
-            }
-          `} />
+          className="
+            bg-slate-800
+            hover:bg-slate-700
+          "
+        >
 
-          <span className="
-            text-sm
-            text-slate-300
-          ">
-            {connected
-              ? "Live Connected"
-              : "Disconnected"
-            }
-          </span>
+          <RefreshCcw size={16} />
 
-        </div>
+        </Button>
 
       </div>
 
-      {/* ========================================== */}
-      {/* KPI CARDS */}
-      {/* ========================================== */}
+
+      {/* ERROR */}
+
+      {pageError && (
+
+        <div className="
+          bg-red-500/10
+          border
+          border-red-500/20
+          text-red-400
+          px-4
+          py-3
+          rounded-xl
+          mb-6
+        ">
+
+          {pageError}
+
+        </div>
+      )}
+
+
+      {/* STATS */}
 
       <div className="
         grid
         grid-cols-1
         sm:grid-cols-2
-        lg:grid-cols-3
-        xl:grid-cols-6
-        gap-4
+        xl:grid-cols-3
+        2xl:grid-cols-6
+        gap-5
         mb-8
       ">
 
-        <StatsCard
+        <StatCard
           title="Total Slots"
-          value={stats.total_slots}
-          loading={loadingStats}
+          value={stats.total_slots || 0}
+          icon={<ParkingCircle size={20} />}
         />
 
-        <StatsCard
+        <StatCard
           title="Occupied"
-          value={stats.occupied_slots}
-          loading={loadingStats}
+          value={stats.occupied_slots || 0}
+          color="text-red-400"
+          icon={<Activity size={20} />}
         />
 
-        <StatsCard
-          title="Free"
-          value={stats.free_slots}
-          loading={loadingStats}
+        <StatCard
+          title="Available"
+          value={stats.free_slots || 0}
+          color="text-emerald-400"
+          icon={<ParkingCircle size={20} />}
         />
 
-        <StatsCard
-          title="Active Vehicles"
-          value={stats.active_sessions}
-          loading={loadingStats}
+        <StatCard
+          title="Vehicles"
+          value={stats.active_sessions || 0}
+          color="text-blue-400"
+          icon={<Car size={20} />}
         />
 
-        <StatsCard
-          title="Today Revenue"
-          value={`₹${stats.today_revenue}`}
-          loading={loadingStats}
+        <StatCard
+          title="Revenue"
+          value={`₹ ${stats.today_revenue || 0}`}
+          color="text-yellow-400"
+          icon={<IndianRupee size={20} />}
         />
 
-        <StatsCard
-          title="Total Revenue"
-          value={`₹${stats.total_revenue}`}
-          loading={loadingStats}
+        <StatCard
+          title="Occupancy"
+          value={`${occupancyPercent}%`}
+          color="text-purple-400"
+          icon={<TrendingUp size={20} />}
         />
 
       </div>
 
-      {/* ========================================== */}
-      {/* MAIN GRID */}
-      {/* ========================================== */}
 
-      <div className="
-        grid
-        grid-cols-1
-        xl:grid-cols-2
-        gap-6
-      ">
+      {/* CHARTS */}
 
-        <Suspense fallback={<LoadingPanel />}>
+      <Suspense
+        fallback={<LoadingPanel />}
+      >
 
-          <Panel title="Slot Management">
-            <SlotManager />
-          </Panel>
+        <div className="
+          grid
+          grid-cols-1
+          xl:grid-cols-2
+          gap-6
+          mb-8
+        ">
 
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <Panel title="Live Vehicles">
-            <VehiclesPanel />
-          </Panel>
-
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <Panel
-            title="Bookings"
-            className="xl:col-span-2"
-          >
-            <BookingManager />
-          </Panel>
-
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <div className="xl:col-span-2">
+          <Panel title="Revenue Analytics">
 
             <RevenueChart
               data={revenueData}
             />
 
-          </div>
+          </Panel>
 
-        </Suspense>
+          <Panel title="Booking Trends">
 
-        <Suspense fallback={<LoadingPanel />}>
-
-          <div className="
-            grid
-            grid-cols-1
-            md:grid-cols-2
-            gap-6
-            xl:col-span-2
-          ">
-
-            <SlotHeatmap />
-
-            <OccupancyRadar />
-
-          </div>
-
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <Panel
-            title="Live Parking Map"
-            className="
-              xl:col-span-2
-              overflow-hidden
-              min-h-[600px]
-            "
-          >
-
-            <LiveParkingMap />
+            <BookingTrendChart
+              data={bookingTrendData}
+            />
 
           </Panel>
 
-        </Suspense>
+          <Panel title="Occupancy">
 
-        <Suspense fallback={<LoadingPanel />}>
+            <OccupancyChart
+              data={occupancyData}
+            />
 
-          <div className="xl:col-span-2">
-            <DevicePanel />
+          </Panel>
+
+          <Panel title="Slot Distribution">
+
+            <SlotStatusPieChart
+              data={slotStatusData}
+            />
+
+          </Panel>
+
+        </div>
+
+      </Suspense>
+
+
+      {/* ACTIVITY */}
+
+      <Panel
+        title="Recent Activity"
+      >
+
+        {recentActivities.length === 0 ? (
+
+          <EmptyState
+
+            title="No Activity"
+
+            description="
+              No recent activity available
+            "
+
+          />
+
+        ) : (
+
+          <div className="
+            space-y-3
+          ">
+
+            {recentActivities.map(
+              (item, index) => (
+
+                <div
+
+                  key={index}
+
+                  className="
+                    flex
+                    items-center
+                    justify-between
+
+                    bg-slate-800/50
+
+                    px-4
+                    py-3
+
+                    rounded-xl
+                  "
+                >
+
+                  <div>
+
+                    <p className="
+                      text-white
+                      text-sm
+                    ">
+
+                      {
+                        item?.message ||
+
+                        "System update"
+                      }
+
+                    </p>
+
+                  </div>
+
+                  <ShieldCheck
+                    size={16}
+                    className="
+                      text-emerald-400
+                    "
+                  />
+
+                </div>
+              )
+            )}
+
           </div>
+        )}
 
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <div className="xl:col-span-2">
-            <ViolationsPanel />
-          </div>
-
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <div className="xl:col-span-2">
-            <AdminSessionsPanel />
-          </div>
-
-        </Suspense>
-
-        <Suspense fallback={<LoadingPanel />}>
-
-          <div className="xl:col-span-2">
-            <RevenuePanel />
-          </div>
-
-        </Suspense>
-
-      </div>
+      </Panel>
 
     </DashboardLayout>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { useWebSocket } from "../../websocket/WebSocketContext";
-// import { useEffect, useState, useCallback } from "react";
-// import { useAuth } from "../../context/AuthContext";
-// import DashboardLayout from "../../components/common/DashboardLayout";
-
-// import StatsCard from "../../components/dashboard/StatsCard";
-// import SlotsPanel from "../../components/dashboard/SlotsPanel";
-// import VehiclesPanel from "../../components/dashboard/VehiclesPanel";
-// import LiveParkingMap from "../../components/map/LiveParkingMap";
-
-// import SlotManager from "../../components/admin/SlotManager";
-// import BookingManager from "../../components/admin/BookingManager";
-// import RevenueChart from "../../components/admin/RevenueChart";
-// import SlotHeatmap from "../../components/admin/SlotHeatmap";
-// import OccupancyRadar from "../../components/admin/OccupancyRadar";
-// import DevicePanel from "../../components/admin/DevicePanel";
-// import ViolationsPanel from "../../components/admin/ViolationsPanel";
-// import AdminSessionsPanel from "../../components/admin/AdminSessionsPanel";
-// import RevenuePanel from "../../components/admin/RevenuePanel";
-
-// import { getAdminStats } from "../../services/admin";
-
-// export default function AdminDashboard() {
-//   const { user, loading: authLoading } = useAuth();
-
-//   const [stats, setStats] = useState({
-//     total_slots: 0,
-//     occupied_slots: 0,
-//     free_slots: 0,
-//     active_sessions: 0,
-//     total_revenue: 0,
-//     today_revenue: 0,
-//   });
-  
-//   const { lastMessage } = useWebSocket();
-
-//   const [loadingStats, setLoadingStats] = useState(true);
-
-//   // ===============================
-//   // 🔐 ADMIN GUARD (IMPROVED)
-//   // ===============================
-//   if (authLoading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center text-white">
-//         Loading dashboard...
-//       </div>
-//     );
-//   }
-
-//   if (!user || user.role !== "admin") {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center text-red-400 text-xl">
-//         Access Denied
-//       </div>
-//     );
-//   }
-
-//   // ===============================
-//   // 📊 LOAD STATS (OPTIMIZED)
-//   // ===============================
-//   const loadStats = useCallback(async () => {
-//     try {
-//       const res = await getAdminStats();
-//       setStats(res.data);
-//     } catch (err) {
-//       console.error("Admin stats error", err);
-//     } finally {
-//       setLoadingStats(false);
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     loadStats();
-
-//     const timer = setInterval(loadStats, 10000); // ✅ reduced load
-//     return () => clearInterval(timer);
-//   }, [loadStats]);
-
-//   // ===============================
-//   // 📊 MOCK DATA (can replace later)
-//   // ===============================
-//   const revenueData = [
-//     { day: "Mon", revenue: stats.today_revenue || 0 },
-//     { day: "Tue", revenue: 0 },
-//     { day: "Wed", revenue: 0 },
-//     { day: "Thu", revenue: 0 },
-//     { day: "Fri", revenue: 0 },
-//     { day: "Sat", revenue: 0 },
-//     { day: "Sun", revenue: 0 },
-//   ];
-
-//   return (
-//     <DashboardLayout>
-//       {/* HEADER */}
-//       <div className="mb-6">
-//         <h1 className="text-2xl font-bold text-white">
-//           Admin Control Center
-//         </h1>
-//         <p className="text-slate-400 text-sm">
-//           Monitor, manage and optimize the Smart Parking platform
-//         </p>
-//       </div>
-
-//       {/* KPI CARDS */}
-//       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-//         <StatsCard title="Total Slots" value={stats.total_slots} loading={loadingStats} />
-//         <StatsCard title="Occupied" value={stats.occupied_slots} loading={loadingStats} />
-//         <StatsCard title="Free" value={stats.free_slots} loading={loadingStats} />
-//         <StatsCard title="Active Vehicles" value={stats.active_sessions} loading={loadingStats} />
-//         <StatsCard title="Today Revenue" value={`₹${stats.today_revenue}`} loading={loadingStats} />
-//         <StatsCard title="Total Revenue" value={`₹${stats.total_revenue}`} loading={loadingStats} />
-//       </div>
-
-//       {/* MAIN PANELS */}
-//       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-//         {/* SLOT MANAGER */}
-//         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-//           <h2 className="text-lg font-semibold mb-3">Slot Management</h2>
-//           <SlotManager />
-//         </div>
-
-//         {/* LIVE VEHICLES */}
-//         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-//           <h2 className="text-lg font-semibold mb-3">Live Vehicles</h2>
-//           <VehiclesPanel />
-//         </div>
-
-//         {/* BOOKINGS */}
-//         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 xl:col-span-2">
-//           <h2 className="text-lg font-semibold mb-3">Bookings</h2>
-//           <BookingManager />
-//         </div>
-
-//         {/* REVENUE CHART */}
-//         <div className="xl:col-span-2">
-//           <RevenueChart data={revenueData} />
-//         </div>
-
-//         {/* ANALYTICS */}
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 xl:col-span-2">
-//           <SlotHeatmap />
-//           <OccupancyRadar />
-//         </div>
-
-//         {/* LIVE MAP */}
-//         <div className="bg-slate-900 border border-slate-800 rounded-xl xl:col-span-2 flex flex-col overflow-hidden">
-//           <div className="px-4 py-3 border-b border-slate-800">
-//             <h2 className="text-lg font-semibold">Live Parking Map</h2>
-//           </div>
-
-//           <div className="flex-1 relative">
-//             <LiveParkingMap />
-//           </div>
-//         </div>
-
-//         {/* DEVICES */}
-//         <div className="xl:col-span-2">
-//           <DevicePanel />
-//         </div>
-
-//         {/* VIOLATIONS */}
-//         <div className="xl:col-span-2">
-//           <ViolationsPanel />
-//         </div>
-
-//         {/* SESSIONS */}
-//         <div className="xl:col-span-2">
-//           <AdminSessionsPanel />
-//         </div>
-
-//         {/* REVENUE PANEL */}
-//         <div className="xl:col-span-2">
-//           <RevenuePanel />
-//         </div>
-
-//       </div>
-//     </DashboardLayout>
-//   );
-// }

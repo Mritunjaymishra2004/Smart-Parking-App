@@ -5,7 +5,7 @@ class SimpleCORSMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
 
-        response["Access-Control-Allow-Origin"] = "http://localhost:5173"
+        response["Access-Control-Allow-Origin"] = "http://127.0.0.1:8000/api/v1"
         response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
 

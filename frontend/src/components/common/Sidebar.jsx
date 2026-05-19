@@ -1,6 +1,5 @@
 import {
   NavLink,
-  useLocation,
 } from "react-router-dom";
 
 import {
@@ -14,11 +13,20 @@ import {
   FaMapMarkedAlt,
   FaExclamationTriangle,
   FaSignOutAlt,
+  FaCog,
+  FaChartPie,
+  FaFileAlt,
+  FaTimes,
 } from "react-icons/fa";
+
+import {
+  useMemo,
+} from "react";
 
 import {
   useAuth,
 } from "../../context/AuthContext";
+
 
 // ======================================================
 // SIDEBAR
@@ -28,30 +36,59 @@ export default function Sidebar({
 
   closeSidebar,
 
+  collapsed = false,
+
 }) {
 
   // ====================================================
-  // HOOKS
+  // AUTH
   // ====================================================
 
   const {
+
     user,
+
     logout,
+
+    viewRole = "user",
+
   } = useAuth();
 
-  const location =
-    useLocation();
 
   // ====================================================
-  // NAVIGATION ITEMS
+  // ADMIN NAVIGATION
   // ====================================================
 
-  const adminLinks = [
+  const adminLinks = useMemo(() => [
 
     {
       to: "/admin",
       label: "Dashboard",
       icon: <FaTachometerAlt />,
+    },
+
+    {
+      to: "/admin/analytics",
+      label: "Analytics",
+      icon: <FaChartPie />,
+    },
+
+    {
+      to: "/admin/reports",
+      label: "Reports",
+      icon: <FaFileAlt />,
+    },
+
+    {
+      to: "/admin/parking-lots",
+      label: "Parking Lots",
+      icon: <FaParking />,
+    },
+
+    {
+      to: "/admin/slots",
+      label: "Slots",
+      icon: <FaParking />,
     },
 
     {
@@ -91,13 +128,25 @@ export default function Sidebar({
     },
 
     {
+      to: "/admin/settings",
+      label: "Settings",
+      icon: <FaCog />,
+    },
+
+    {
       to: "/gate",
       label: "Gate Scanner",
       icon: <FaQrcode />,
     },
-  ];
 
-  const userLinks = [
+  ], []);
+
+
+  // ====================================================
+  // USER NAVIGATION
+  // ====================================================
+
+  const userLinks = useMemo(() => [
 
     {
       to: "/dashboard",
@@ -128,63 +177,126 @@ export default function Sidebar({
       label: "Payments",
       icon: <FaMoneyBillWave />,
     },
-  ];
+
+  ], []);
+
+
+  // ====================================================
+  // LINKS
+  // ====================================================
 
   const links =
-    user?.role === "admin"
+
+    viewRole === "admin"
+
       ? adminLinks
+
       : userLinks;
 
+
   // ====================================================
-  // NAV LINK STYLE
+  // NAV STYLE
   // ====================================================
 
-  const navClass = (
-    isActive
-  ) => `
+  const navClass =
+    ({ isActive }) => `
 
-    flex
-    items-center
-    gap-3
+      group
+      flex
+      items-center
 
-    px-4
-    py-3
+      ${
+        collapsed
 
-    rounded-xl
+          ? "justify-center"
 
-    text-sm
-    font-medium
+          : "gap-3"
+      }
 
-    transition-all
-    duration-200
+      px-4
+      py-3
 
-    ${
-      isActive
+      rounded-xl
 
-        ? `
-          bg-emerald-500/15
-          text-emerald-400
-          border
-          border-emerald-500/20
-          shadow-lg
-        `
+      text-sm
+      font-medium
 
-        : `
-          text-slate-300
-          hover:bg-slate-800/70
-          hover:text-white
-        `
-    }
-  `;
+      transition-all
+      duration-200
+
+      relative
+
+      ${
+        isActive
+
+          ? `
+            bg-emerald-500/15
+            text-emerald-400
+            border
+            border-emerald-500/20
+            shadow-lg
+          `
+
+          : `
+            text-slate-300
+            hover:bg-slate-800/70
+            hover:text-white
+          `
+      }
+    `;
+
 
   // ====================================================
   // LOGOUT
   // ====================================================
 
-  const handleLogout = () => {
+  const handleLogout =
+    async () => {
 
-    logout();
-  };
+      try {
+
+        await logout();
+
+      } catch (error) {
+
+        console.error(
+          "Logout failed:",
+          error
+        );
+
+      } finally {
+
+        closeSidebar?.();
+      }
+    };
+
+
+  // ====================================================
+  // USER DATA
+  // ====================================================
+
+  const displayName =
+
+    user?.username ||
+
+    user?.name ||
+
+    "User";
+
+  const displayRole =
+
+    viewRole ||
+
+    "user";
+
+  const avatarLetter =
+
+    displayName?.[0]?.toUpperCase()
+
+    ||
+
+    "U";
+
 
   // ====================================================
   // UI
@@ -193,98 +305,178 @@ export default function Sidebar({
   return (
 
     <aside className="
-      h-full
+      h-screen
       flex
       flex-col
+
       bg-slate-900/95
+      backdrop-blur-xl
+
+      border-r
+      border-slate-800
+
       text-white
     ">
 
       {/* ========================================== */}
-      {/* BRAND */}
+      {/* HEADER */}
       {/* ========================================== */}
 
       <div className="
-        px-6
-        py-5
-        border-b
-        border-slate-800
-      ">
+        sticky
+        top-0
+        z-20
 
-        <h1 className="
-          text-2xl
-          font-bold
-          text-emerald-400
-        ">
-          Smart Parking
-        </h1>
-
-        <p className="
-          text-xs
-          text-slate-400
-          mt-1
-        ">
-          IoT Parking Platform
-        </p>
-
-      </div>
-
-      {/* ========================================== */}
-      {/* USER INFO */}
-      {/* ========================================== */}
-
-      <div className="
         px-5
-        py-4
+        py-5
+
         border-b
         border-slate-800
+
+        bg-slate-900/95
+        backdrop-blur-xl
       ">
 
         <div className="
           flex
           items-center
-          gap-3
+          justify-between
         ">
 
-          <div className="
-            w-11
-            h-11
-            rounded-full
-            bg-emerald-500/20
-            flex
-            items-center
-            justify-center
-            text-emerald-400
-            font-bold
-            text-lg
-          ">
+          {!collapsed && (
 
-            {user?.name?.[0] || "U"}
+            <div>
 
-          </div>
+              <h1 className="
+                text-2xl
+                font-bold
+                text-emerald-400
+              ">
 
-          <div>
+                Smart Parking
 
-            <p className="
-              font-semibold
-              text-sm
-            ">
-              {user?.name || "User"}
-            </p>
+              </h1>
 
-            <p className="
-              text-xs
+              <p className="
+                text-xs
+                text-slate-400
+                mt-1
+              ">
+
+                IoT Parking Platform
+
+              </p>
+
+            </div>
+          )}
+
+          {/* MOBILE CLOSE */}
+
+          <button
+
+            onClick={closeSidebar}
+
+            className="
+              lg:hidden
               text-slate-400
-              capitalize
-            ">
-              {user?.role || "user"}
-            </p>
+              hover:text-white
+            "
+          >
 
-          </div>
+            <FaTimes />
+
+          </button>
 
         </div>
 
       </div>
+
+
+      {/* ========================================== */}
+      {/* PROFILE */}
+      {/* ========================================== */}
+
+      <div className="
+        px-4
+        py-4
+        border-b
+        border-slate-800
+      ">
+
+        <div className={`
+          flex
+          items-center
+
+          ${
+            collapsed
+
+              ? "justify-center"
+
+              : "gap-3"
+          }
+        `}>
+
+          {/* AVATAR */}
+
+          <div className="
+            w-11
+            h-11
+
+            rounded-full
+
+            bg-emerald-500/20
+
+            flex
+            items-center
+            justify-center
+
+            text-emerald-400
+            font-bold
+            text-lg
+
+            shrink-0
+          ">
+
+            {avatarLetter}
+
+          </div>
+
+
+          {/* USER INFO */}
+
+          {!collapsed && (
+
+            <div className="
+              overflow-hidden
+            ">
+
+              <p className="
+                font-semibold
+                text-sm
+                truncate
+              ">
+
+                {displayName}
+
+              </p>
+
+              <p className="
+                text-xs
+                text-slate-400
+                capitalize
+              ">
+
+                {displayRole}
+
+              </p>
+
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
 
       {/* ========================================== */}
       {/* NAVIGATION */}
@@ -293,50 +485,59 @@ export default function Sidebar({
       <nav className="
         flex-1
         overflow-y-auto
+
         p-4
         space-y-2
       ">
 
-        {links.map((item) => {
+        {links.map((item) => (
 
-          const isActive =
-            location.pathname ===
-            item.to;
+          <NavLink
 
-          return (
+            key={item.to}
 
-            <NavLink
-              key={item.to}
+            to={item.to}
 
-              to={item.to}
+            onClick={() =>
+              closeSidebar?.()
+            }
 
-              onClick={() =>
-                closeSidebar?.()
-              }
+            className={navClass}
+          >
 
-              className={() =>
-                navClass(isActive)
-              }
-            >
+            {/* ICON */}
+
+            <span className="
+              text-lg
+              shrink-0
+            ">
+
+              {item.icon}
+
+            </span>
+
+
+            {/* LABEL */}
+
+            {!collapsed && (
 
               <span className="
-                text-lg
+                truncate
               ">
-                {item.icon}
-              </span>
 
-              <span>
                 {item.label}
-              </span>
 
-            </NavLink>
-          );
-        })}
+              </span>
+            )}
+
+          </NavLink>
+        ))}
 
       </nav>
 
+
       {/* ========================================== */}
-      {/* LOGOUT */}
+      {/* FOOTER */}
       {/* ========================================== */}
 
       <div className="
@@ -346,26 +547,40 @@ export default function Sidebar({
       ">
 
         <button
+
           onClick={handleLogout}
-          className="
+
+          className={`
             w-full
+
             flex
             items-center
-            justify-center
-            gap-3
+
+            ${
+              collapsed
+
+                ? "justify-center"
+
+                : "justify-center gap-3"
+            }
+
             px-4
             py-3
+
             rounded-xl
+
             bg-red-500/10
             text-red-400
+
             hover:bg-red-500/20
-            transition
-          "
+
+            transition-all
+          `}
         >
 
           <FaSignOutAlt />
 
-          Logout
+          {!collapsed && "Logout"}
 
         </button>
 
@@ -374,61 +589,3 @@ export default function Sidebar({
     </aside>
   );
 }
-
-
-// import { NavLink } from "react-router-dom";
-// import {
-//   FaTachometerAlt,
-//   FaCarSide,
-//   FaParking,
-//   FaClipboardList,
-//   FaMoneyBillWave,
-//   FaQrcode,
-//   FaHistory,
-// } from "react-icons/fa";
-
-// export default function Sidebar() {
-//   const navClass = ({ isActive }) =>
-//     `flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition
-//      ${
-//        isActive
-//          ? "bg-emerald-500/20 text-emerald-400"
-//          : "text-slate-300 hover:bg-slate-800 hover:text-emerald-400"
-//      }`;
-
-//   return (
-//     <aside className="w-64 bg-slate-900 border-r border-slate-800 h-full p-4 space-y-4">
-      
-//       <NavLink to="/admin" className={navClass}>
-//         <FaTachometerAlt />
-//         Dashboard
-//       </NavLink>
-
-//       <NavLink to="/user" className={navClass}>
-//         <FaParking />
-//         Book Slot
-//       </NavLink>
-
-//       <NavLink to="/history" className={navClass}>
-//         <FaHistory />
-//         My Bookings
-//       </NavLink>
-
-//       <NavLink to="/gate" className={navClass}>
-//         <FaQrcode />
-//         Gate Scanner
-//       </NavLink>
-
-//       <NavLink to="/vehicles" className={navClass}>
-//         <FaCarSide />
-//         Vehicles
-//       </NavLink>
-
-//       <NavLink to="/payments" className={navClass}>
-//         <FaMoneyBillWave />
-//         Payments
-//       </NavLink>
-
-//     </aside>
-//   );
-// }

@@ -1,45 +1,70 @@
 import {
+
   createContext,
+
   useContext,
+
   useEffect,
-  useRef,
-  useState,
+
   useMemo,
+
+  useRef,
+
+  useState,
+
+  useCallback,
+
 } from "react";
 
 import api from "../api/axios";
 
 import {
+
   connectSocket,
+
   disconnectSocket,
+
 } from "../utils/socket";
+
 
 // ======================================================
 // CONTEXT
 // ======================================================
 
-const AuthContext = createContext();
+const AuthContext =
+  createContext(null);
+
 
 // ======================================================
 // PROVIDER
 // ======================================================
 
 export const AuthProvider = ({
+
   children,
+
 }) => {
 
   // ====================================================
   // STATE
   // ====================================================
 
-  const [user, setUser] =
+  const [user,
+    setUser] =
     useState(null);
 
-  const [viewRole, setViewRole] =
+  const [viewRole,
+    setViewRole] =
     useState("user");
 
-  const [loading, setLoading] =
+  const [loading,
+    setLoading] =
     useState(true);
+
+  const [authError,
+    setAuthError] =
+    useState("");
+
 
   // ====================================================
   // REFS
@@ -48,296 +73,533 @@ export const AuthProvider = ({
   const initialized =
     useRef(false);
 
+  const mounted =
+    useRef(true);
+
   const socketConnected =
     useRef(false);
+
 
   // ====================================================
   // SOCKET HELPERS
   // ====================================================
 
-  const safeConnectSocket = () => {
+  const safeConnectSocket =
+    useCallback(() => {
 
-    if (!socketConnected.current) {
+      if (
+        socketConnected.current
+      ) {
+
+        return;
+      }
 
       connectSocket();
 
-      socketConnected.current = true;
-    }
-  };
+      socketConnected.current =
+        true;
 
-  const safeDisconnectSocket = () => {
+    }, []);
 
-    if (socketConnected.current) {
+
+  const safeDisconnectSocket =
+    useCallback(() => {
+
+      if (
+        !socketConnected.current
+      ) {
+
+        return;
+      }
 
       disconnectSocket();
 
-      socketConnected.current = false;
-    }
-  };
+      socketConnected.current =
+        false;
+
+    }, []);
+
 
   // ====================================================
   // TOKEN HELPERS
   // ====================================================
 
-  const clearAuthData = () => {
+  const getAccessToken =
+    () => {
 
-    localStorage.removeItem("access");
+      return localStorage.getItem(
+        "access"
+      );
+    };
 
-    localStorage.removeItem("refresh");
-  };
+
+  const getRefreshToken =
+    () => {
+
+      return localStorage.getItem(
+        "refresh"
+      );
+    };
+
+
+  const setTokens =
+    (
+      access,
+      refresh
+    ) => {
+
+      localStorage.setItem(
+        "access",
+        access
+      );
+
+      localStorage.setItem(
+        "refresh",
+        refresh
+      );
+    };
+
+
+  const clearAuthData =
+    () => {
+
+      localStorage.removeItem(
+        "access"
+      );
+
+      localStorage.removeItem(
+        "refresh"
+      );
+    };
+
 
   // ====================================================
-  // LOGOUT
+  // LOGOUT CLEANUP
   // ====================================================
 
-  const logout = () => {
+  const performLogoutCleanup =
+    useCallback(() => {
 
-    clearAuthData();
+      clearAuthData();
 
-    safeDisconnectSocket();
+      safeDisconnectSocket();
 
-    setUser(null);
+      if (mounted.current) {
 
-    setViewRole("user");
-  };
+        setUser(null);
+
+        setViewRole("user");
+
+      }
+
+    }, [safeDisconnectSocket]);
+
+
+  // ====================================================
+  // REFRESH TOKEN
+  // ====================================================
+
+  const refreshAccessToken =
+    useCallback(async () => {
+
+      try {
+
+        const refresh =
+          getRefreshToken();
+
+        if (!refresh) {
+
+          throw new Error(
+            "No refresh token"
+          );
+        }
+
+        const response =
+          await api.post(
+            "/auth/refresh/",
+            {
+              refresh,
+            }
+          );
+
+        localStorage.setItem(
+
+          "access",
+
+          response.data.access
+        );
+
+        return response.data.access;
+
+      } catch (error) {
+
+        console.error(
+          "Token refresh failed:",
+          error
+        );
+
+        performLogoutCleanup();
+
+        throw error;
+      }
+
+    }, [performLogoutCleanup]);
+
 
   // ====================================================
   // LOAD USER
   // ====================================================
 
-  useEffect(() => {
-
-    if (initialized.current) return;
-
-    initialized.current = true;
-
-    let mounted = true;
-
-    const loadUser = async () => {
-
-      const token =
-        localStorage.getItem("access");
-
-      // ================================================
-      // NO TOKEN
-      // ================================================
-
-      if (!token) {
-
-        if (mounted) {
-
-          setUser(null);
-
-          setLoading(false);
-        }
-
-        return;
-      }
+  const loadUser =
+    useCallback(async () => {
 
       try {
 
-        const res =
-          await api.get("/auth/me/");
+        setAuthError("");
 
-        // ==============================================
-        // COMPONENT STILL ACTIVE
-        // ==============================================
+        const token =
+          getAccessToken();
 
-        if (mounted) {
+        if (!token) {
 
-          setUser(res.data);
+          if (mounted.current) {
+
+            setUser(null);
+
+            setLoading(false);
+          }
+
+          return;
+        }
+
+        const response =
+          await api.get(
+            "/auth/me/"
+          );
+
+        if (!mounted.current) {
+
+          return;
+        }
+
+        setUser(
+          response.data
+        );
+
+        setViewRole(
+
+          response.data.role ||
+
+          "user"
+        );
+
+        safeConnectSocket();
+
+      } catch (error) {
+
+        console.error(
+          "Load user failed:",
+          error
+        );
+
+        // ==========================================
+        // TRY REFRESH TOKEN
+        // ==========================================
+
+        try {
+
+          await refreshAccessToken();
+
+          const retryResponse =
+            await api.get(
+              "/auth/me/"
+            );
+
+          if (!mounted.current) {
+
+            return;
+          }
+
+          setUser(
+            retryResponse.data
+          );
 
           setViewRole(
-            res.data.role || "user"
+
+            retryResponse.data.role ||
+
+            "user"
           );
 
           safeConnectSocket();
-        }
 
-      } catch (err) {
+        } catch {
 
-        console.error(
-          "User load failed:",
-          err?.response?.data || err.message
-        );
+          performLogoutCleanup();
 
-        clearAuthData();
+          if (mounted.current) {
 
-        safeDisconnectSocket();
-
-        if (mounted) {
-
-          setUser(null);
+            setAuthError(
+              "Session expired"
+            );
+          }
         }
 
       } finally {
 
-        if (mounted) {
+        if (mounted.current) {
 
           setLoading(false);
         }
       }
-    };
+
+    }, [
+
+      refreshAccessToken,
+
+      safeConnectSocket,
+
+      performLogoutCleanup,
+    ]);
+
+
+  // ====================================================
+  // INITIALIZE
+  // ====================================================
+
+  useEffect(() => {
+
+    mounted.current = true;
+
+    if (
+      initialized.current
+    ) {
+
+      return;
+    }
+
+    initialized.current =
+      true;
 
     loadUser();
 
-    // ================================================
-    // CLEANUP
-    // ================================================
-
     return () => {
 
-      mounted = false;
+      mounted.current =
+        false;
 
       safeDisconnectSocket();
     };
 
-  }, []);
+  }, [
+
+    loadUser,
+
+    safeDisconnectSocket,
+  ]);
+
 
   // ====================================================
   // LOGIN
   // ====================================================
 
-  const login = async (
-    email,
-    password
-  ) => {
+  const login =
+    async (
+      email,
+      password
+    ) => {
 
-    try {
+      try {
 
-      const res =
-        await api.post(
-          "/auth/login/",
-          {
-            email,
-            password,
-          }
+        setAuthError("");
+
+        const response =
+          await api.post(
+            "/auth/login/",
+            {
+              email,
+              password,
+            }
+          );
+
+        setTokens(
+
+          response.data.access,
+
+          response.data.refresh
         );
 
-      // ==============================================
-      // STORE TOKENS
-      // ==============================================
+        await loadUser();
 
-      localStorage.setItem(
-        "access",
-        res.data.access
-      );
+        return {
 
-      localStorage.setItem(
-        "refresh",
-        res.data.refresh
-      );
+          success: true,
+        };
 
-      // ==============================================
-      // LOAD USER
-      // ==============================================
+      } catch (error) {
 
-      const me =
-        await api.get("/auth/me/");
+        console.error(
+          "Login failed:",
+          error
+        );
 
-      setUser(me.data);
+        if (mounted.current) {
 
-      setViewRole(
-        me.data.role || "user"
-      );
+          setAuthError(
 
-      safeConnectSocket();
+            error?.response?.data
+              ?.detail
 
-      return me.data;
+            ||
 
-    } catch (err) {
-
-      console.error(
-        "Login failed:",
-        err?.response?.data || err.message
-      );
-
-      throw (
-        err?.response?.data || {
-          detail: "Login failed",
+            "Login failed"
+          );
         }
-      );
-    }
-  };
+
+        return {
+
+          success: false,
+
+          error,
+        };
+      }
+    };
+
 
   // ====================================================
   // SIGNUP
   // ====================================================
 
-  const signup = async (
-    email,
-    password,
-    name
-  ) => {
+  const signup =
+    async (
+      email,
+      password,
+      name
+    ) => {
 
-    try {
+      try {
 
-      await api.post(
-        "/auth/signup/",
-        {
+        setAuthError("");
+
+        await api.post(
+          "/auth/signup/",
+          {
+            email,
+            password,
+            name,
+            role: "user",
+          }
+        );
+
+        return await login(
           email,
-          password,
-          name,
-          role: "user",
+          password
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Signup failed:",
+          error
+        );
+
+        if (mounted.current) {
+
+          setAuthError(
+
+            error?.response?.data
+              ?.detail
+
+            ||
+
+            "Signup failed"
+          );
         }
-      );
 
-      return await login(
-        email,
-        password
-      );
+        return {
 
-    } catch (err) {
+          success: false,
 
-      console.error(
-        "Signup failed:",
-        err?.response?.data || err.message
-      );
+          error,
+        };
+      }
+    };
 
-      throw (
-        err?.response?.data || {
-          detail: "Signup failed",
-        }
-      );
-    }
-  };
+
+  // ====================================================
+  // LOGOUT
+  // ====================================================
+
+  const logout =
+    useCallback(() => {
+
+      performLogoutCleanup();
+
+    }, [performLogoutCleanup]);
+
 
   // ====================================================
   // SWITCH ROLE
   // ====================================================
 
-  const switchRole = (
-    role
-  ) => {
+  const switchRole =
+    useCallback((role) => {
 
-    setViewRole(role);
-  };
+      setViewRole(role);
+
+    }, []);
+
 
   // ====================================================
-  // MEMOIZED VALUE
+  // VALUE
   // ====================================================
 
-  const value = useMemo(() => ({
-    user,
+  const value =
+    useMemo(() => ({
 
-    login,
+      user,
 
-    signup,
+      loading,
 
-    logout,
+      authError,
 
-    loading,
+      login,
 
-    viewRole,
+      signup,
 
-    switchRole,
+      logout,
 
-    isAuthenticated: !!user,
-  }), [
-    user,
-    loading,
-    viewRole,
-  ]);
+      viewRole,
+
+      switchRole,
+
+      refreshUser:
+        loadUser,
+
+      isAuthenticated:
+        !!user,
+
+    }), [
+
+      user,
+
+      loading,
+
+      authError,
+
+      login,
+
+      signup,
+
+      logout,
+
+      viewRole,
+
+      switchRole,
+
+      loadUser,
+    ]);
+
 
   // ====================================================
   // PROVIDER
@@ -345,7 +607,9 @@ export const AuthProvider = ({
 
   return (
 
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={value}
+    >
 
       {children}
 
@@ -353,174 +617,26 @@ export const AuthProvider = ({
   );
 };
 
+
 // ======================================================
 // HOOK
 // ======================================================
 
-export const useAuth = () => {
+export const useAuth =
+  () => {
 
-  return useContext(AuthContext);
-};
+    const context =
+      useContext(
+        AuthContext
+      );
 
+    if (!context) {
 
+      throw new Error(
 
+        "useAuth must be used within AuthProvider"
+      );
+    }
 
-
-
-
-
-
-
-
-
-// import { createContext, useContext, useEffect, useRef, useState } from "react";
-// import api from "../services/api";
-// import { connectSocket, disconnectSocket } from "../utils/socket";
-
-// const AuthContext = createContext();
-
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null);
-//   const [viewRole, setViewRole] = useState("user");
-//   const [loading, setLoading] = useState(true);
-
-//   const initialized = useRef(false);
-//   const socketConnected = useRef(false);
-
-//   // ===============================
-//   // 🔹 SAFE SOCKET CONNECT
-//   // ===============================
-//   const safeConnectSocket = () => {
-//     if (!socketConnected.current) {
-//       connectSocket();
-//       socketConnected.current = true;
-//     }
-//   };
-
-//   const safeDisconnectSocket = () => {
-//     if (socketConnected.current) {
-//       disconnectSocket();
-//       socketConnected.current = false;
-//     }
-//   };
-
-//   // ===============================
-//   // 🔹 LOAD USER
-//   // ===============================
-//   useEffect(() => {
-//     if (initialized.current) return;
-//     initialized.current = true;
-
-//     const loadUser = async () => {
-//       const token = localStorage.getItem("access");
-
-//       if (!token) {
-//         setUser(null);
-//         setLoading(false);
-//         return;
-//       }
-
-//       try {
-//         const res = await api.get("/auth/me/");
-//         setUser(res.data);
-//         setViewRole(res.data.role || "user");
-//         safeConnectSocket();
-//       } catch (err) {
-//         console.error("Auth error");
-//         localStorage.removeItem("access");
-//         localStorage.removeItem("refresh");
-//         safeDisconnectSocket();
-//         setUser(null);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadUser();
-
-//     // ✅ CLEANUP
-//     return () => {
-//       safeDisconnectSocket();
-//     };
-//   }, []);
-
-//   // ===============================
-//   // 🔹 LOGIN
-//   // ===============================
-//   const login = async (email, password) => {
-//     try {
-//       const res = await api.post("/auth/login/", {
-//         email,
-//         password,
-//       });
-
-//       localStorage.setItem("access", res.data.access);
-//       localStorage.setItem("refresh", res.data.refresh);
-
-//       const me = await api.get("/auth/me/");
-//       setUser(me.data);
-//       setViewRole(me.data.role || "user");
-//       safeConnectSocket();
-
-//       return me.data;
-//     } catch (err) {
-//       console.error("Login failed");
-//       throw err.response?.data || err;
-//     }
-//   };
-
-//   // ===============================
-//   // 🔹 SIGNUP
-//   // ===============================
-//   const signup = async (email, password, name) => {
-//     try {
-//       await api.post("/auth/signup/", {
-//         email,
-//         password,
-//         name,
-//         role: "user",
-//       });
-
-//       return await login(email, password);
-//     } catch (err) {
-//       console.error("Signup failed");
-//       throw err.response?.data || err;
-//     }
-//   };
-
-//   // ===============================
-//   // 🔹 LOGOUT
-//   // ===============================
-//   const logout = () => {
-//     localStorage.removeItem("access");
-//     localStorage.removeItem("refresh");
-//     safeDisconnectSocket();
-//     setUser(null);
-//     setViewRole("user");
-//   };
-
-//   // ===============================
-//   // 🔹 SWITCH ROLE
-//   // ===============================
-//   const switchRole = (role) => {
-//     setViewRole(role);
-//   };
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         user,
-//         login,
-//         signup,
-//         logout,
-//         viewRole,
-//         switchRole,
-//         loading,
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-// export const useAuth = () => useContext(AuthContext);
+    return context;
+  };

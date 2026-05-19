@@ -12,21 +12,31 @@ import "./index.css";
 
 import "leaflet/dist/leaflet.css";
 
+
 // ======================================================
 // CONTEXTS
 // ======================================================
+
+import {
+  ThemeProvider,
+} from "./context/ThemeContext";
+
+import {
+  NotificationProvider,
+} from "./context/NotificationContext";
 
 import {
   AuthProvider,
 } from "./context/AuthContext";
 
 import {
+  WebSocketProvider,
+} from "./websocket/WebSocketContext";
+
+import {
   ParkingProvider,
 } from "./context/ParkingContext";
 
-import {
-  WebSocketProvider,
-} from "./websocket/WebSocketContext";
 
 // ======================================================
 // ROOT
@@ -36,110 +46,69 @@ ReactDOM.createRoot(
   document.getElementById("root")
 ).render(
 
-  
+  <React.StrictMode>
+
+    {/* ========================================== */}
+    {/* ROUTER */}
+    {/* ========================================== */}
 
     <BrowserRouter
-  future={{
-    v7_startTransition: true,
-    v7_relativeSplatPath: true,
-  }}
->
+
+      future={{
+
+        v7_startTransition: true,
+
+        v7_relativeSplatPath: true,
+      }}
+    >
 
       {/* ====================================== */}
-      {/* SOCKET PROVIDER FIRST */}
+      {/* THEME */}
       {/* ====================================== */}
 
-      <WebSocketProvider>
+      <ThemeProvider>
 
         {/* ==================================== */}
-        {/* AUTH */}
+        {/* NOTIFICATIONS */}
         {/* ==================================== */}
 
-        <AuthProvider>
+        <NotificationProvider>
 
           {/* ================================== */}
-          {/* PARKING */}
+          {/* AUTH */}
           {/* ================================== */}
 
-          <ParkingProvider>
+          <AuthProvider>
 
-            <App />
+            {/* ================================ */}
+            {/* WEBSOCKET */}
+            {/* ================================ */}
 
-          </ParkingProvider>
+            <WebSocketProvider>
 
-        </AuthProvider>
+              {/* ============================== */}
+              {/* PARKING */}
+              {/* ============================== */}
 
-      </WebSocketProvider>
+              <ParkingProvider>
+
+                {/* ============================ */}
+                {/* APP */}
+                {/* ============================ */}
+
+                <App />
+
+              </ParkingProvider>
+
+            </WebSocketProvider>
+
+          </AuthProvider>
+
+        </NotificationProvider>
+
+      </ThemeProvider>
 
     </BrowserRouter>
 
-  
+  </React.StrictMode>
 );
-
-
-
-
-
-
-// import React from "react";
-// import ReactDOM from "react-dom/client";
-// import { BrowserRouter } from "react-router-dom";
-// import {
-//   WebSocketProvider,
-// } from "./websocket/WebSocketContext";
-// import App from "./App";
-
-// import { AuthProvider } from "./context/AuthContext";
-// import { ParkingProvider } from "./context/ParkingContext";
-
-// import "./index.css";
-
-// import "leaflet/dist/leaflet.css";
-
-// // ======================================================
-// // ROOT RENDER
-// // ======================================================
-
-// ReactDOM.createRoot(
-//   document.getElementById("root")
-// ).render(
-//   <React.StrictMode>
-//     <BrowserRouter>
-//       <AuthProvider>
-//         <ParkingProvider>
-//           <WebSocketProvider>
-//             <App />
-//           </WebSocketProvider>
-//         </ParkingProvider>
-//       </AuthProvider>
-//     </BrowserRouter>
-//   </React.StrictMode>
-// );
-
-
-// const {
-//   lastMessage,
-//   connected
-// } = useWebSocket();
-
-
-
-
-// import React from "react";
-// import ReactDOM from "react-dom/client";
-// import { BrowserRouter } from "react-router-dom";
-// import App from "./App";
-// import { AuthProvider } from "./context/AuthContext";
-// import "./index.css";
-// import "leaflet/dist/leaflet.css";
-// import { ParkingProvider } from "./context/ParkingContext";
-
-// ReactDOM.createRoot(document.getElementById("root")).render(
-//   <BrowserRouter>
-//     <AuthProvider>
-//       <ParkingProvider>
-//         <App />
-//       </ParkingProvider>
-//     </AuthProvider>
-//   </BrowserRouter>
-// );

@@ -7,7 +7,7 @@ import axios from "axios";
 const api = axios.create({
 
   baseURL:
-    "https://smart-parking-app-hazel.vercel.app/api",
+    "http://127.0.0.1:8000/api/v1",
 
   headers: {
     "Content-Type":

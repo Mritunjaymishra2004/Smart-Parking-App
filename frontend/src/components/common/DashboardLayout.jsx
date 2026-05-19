@@ -5,12 +5,49 @@ import {
 
 import {
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
 } from "lucide-react";
 
 import Navbar from "./Navbar";
 
 import Sidebar from "./Sidebar";
+
+
+// ======================================================
+// LOADER
+// ======================================================
+
+function Loader() {
+
+  return (
+
+    <div className="
+      flex
+      items-center
+      justify-center
+
+      min-h-[300px]
+    ">
+
+      <div className="
+        w-12
+        h-12
+
+        border-4
+        border-emerald-500
+        border-t-transparent
+
+        rounded-full
+
+        animate-spin
+      " />
+
+    </div>
+  );
+}
+
 
 // ======================================================
 // DASHBOARD LAYOUT
@@ -23,27 +60,106 @@ export default function DashboardLayout({
 }) {
 
   // ====================================================
-  // STATE
+  // SIDEBAR STATE
   // ====================================================
 
-  const [sidebarOpen, setSidebarOpen] =
+  const [sidebarOpen,
+    setSidebarOpen] =
     useState(false);
 
+  const [collapsed,
+    setCollapsed] =
+    useState(false);
+
+  const [mounted,
+    setMounted] =
+    useState(false);
+
+
   // ====================================================
-  // AUTO CLOSE ON RESIZE
+  // INITIALIZE COLLAPSE
   // ====================================================
 
   useEffect(() => {
 
-    const handleResize = () => {
+    try {
 
-      if (
-        window.innerWidth >= 1024
-      ) {
+      const savedState =
+        localStorage.getItem(
+          "sidebar-collapsed"
+        );
 
-        setSidebarOpen(false);
-      }
-    };
+      setCollapsed(
+        savedState === "true"
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Sidebar localStorage error:",
+        error
+      );
+    }
+
+    setMounted(true);
+
+  }, []);
+
+
+  // ====================================================
+  // SAVE COLLAPSE
+  // ====================================================
+
+  useEffect(() => {
+
+    if (!mounted) {
+
+      return;
+    }
+
+    try {
+
+      localStorage.setItem(
+
+        "sidebar-collapsed",
+
+        collapsed
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Sidebar save error:",
+        error
+      );
+    }
+
+  }, [
+
+    collapsed,
+
+    mounted,
+  ]);
+
+
+  // ====================================================
+  // AUTO CLOSE MOBILE
+  // ====================================================
+
+  useEffect(() => {
+
+    const handleResize =
+      () => {
+
+        if (
+
+          window.innerWidth >= 1024
+
+        ) {
+
+          setSidebarOpen(false);
+        }
+      };
 
     window.addEventListener(
       "resize",
@@ -59,6 +175,7 @@ export default function DashboardLayout({
     };
 
   }, []);
+
 
   // ====================================================
   // BODY SCROLL LOCK
@@ -85,6 +202,30 @@ export default function DashboardLayout({
 
   }, [sidebarOpen]);
 
+
+  // ====================================================
+  // TOGGLE SIDEBAR
+  // ====================================================
+
+  const toggleCollapse =
+    () => {
+
+      setCollapsed(
+        (prev) => !prev
+      );
+    };
+
+
+  // ====================================================
+  // LOADING
+  // ====================================================
+
+  if (!mounted) {
+
+    return <Loader />;
+  }
+
+
   // ====================================================
   // UI
   // ====================================================
@@ -93,25 +234,27 @@ export default function DashboardLayout({
 
     <div className="
       min-h-screen
-      flex
-      flex-col
+
       bg-gradient-to-br
       from-slate-950
       via-slate-900
       to-slate-950
+
       text-white
     ">
 
       {/* ========================================== */}
-      {/* NAVBAR */}
+      {/* TOP NAVBAR */}
       {/* ========================================== */}
 
       <header className="
         sticky
         top-0
-        z-50
+        z-40
+
         backdrop-blur-xl
         bg-slate-900/70
+
         border-b
         border-slate-800
       ">
@@ -123,31 +266,96 @@ export default function DashboardLayout({
         ">
 
           {/* ==================================== */}
-          {/* MOBILE MENU BUTTON */}
+          {/* LEFT ACTIONS */}
           {/* ==================================== */}
 
-          <button
-            onClick={() =>
-              setSidebarOpen(true)
-            }
-            className="
-              lg:hidden
-              p-4
-              text-slate-300
-              hover:text-white
-              transition
-            "
-          >
+          <div className="
+            flex
+            items-center
+          ">
 
-            <Menu size={24} />
+            {/* MOBILE MENU */}
 
-          </button>
+            <button
+
+              onClick={() =>
+                setSidebarOpen(true)
+              }
+
+              className="
+                lg:hidden
+
+                p-4
+
+                text-slate-300
+                hover:text-white
+
+                transition
+              "
+            >
+
+              <Menu size={24} />
+
+            </button>
+
+
+            {/* DESKTOP COLLAPSE */}
+
+            <button
+
+              onClick={
+                toggleCollapse
+              }
+
+              className="
+                hidden
+                lg:flex
+
+                items-center
+                justify-center
+
+                w-14
+                h-14
+
+                border-r
+                border-slate-800
+
+                text-slate-400
+                hover:text-white
+
+                transition
+              "
+            >
+
+              {
+                collapsed
+
+                  ? (
+                    <PanelLeftOpen
+                      size={20}
+                    />
+                  )
+
+                  : (
+                    <PanelLeftClose
+                      size={20}
+                    />
+                  )
+              }
+
+            </button>
+
+          </div>
+
 
           {/* ==================================== */}
           {/* NAVBAR */}
           {/* ==================================== */}
 
-          <div className="flex-1">
+          <div className="
+            flex-1
+            min-w-0
+          ">
 
             <Navbar />
 
@@ -157,15 +365,14 @@ export default function DashboardLayout({
 
       </header>
 
+
       {/* ========================================== */}
-      {/* BODY */}
+      {/* MAIN BODY */}
       {/* ========================================== */}
 
       <div className="
         flex
-        flex-1
         relative
-        overflow-visible
       ">
 
         {/* ====================================== */}
@@ -175,44 +382,60 @@ export default function DashboardLayout({
         {sidebarOpen && (
 
           <div
+
             onClick={() =>
               setSidebarOpen(false)
             }
+
             className="
               fixed
               inset-0
+
+              z-40
+
               bg-black/60
               backdrop-blur-sm
-              z-40
+
               lg:hidden
             "
           />
         )}
+
 
         {/* ====================================== */}
         {/* SIDEBAR */}
         {/* ====================================== */}
 
         <aside className={`
+
           fixed
-          lg:static
+          lg:sticky
+
           top-0
           left-0
+
           z-50
-          h-full
-          w-72
-          bg-slate-900/95
-          backdrop-blur-xl
-          border-r
-          border-slate-800
-          transform
-          transition-transform
+
+          h-screen
+
+          transition-all
           duration-300
           ease-in-out
 
-          ${sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
+          ${
+            collapsed
+
+              ? "lg:w-24"
+
+              : "lg:w-72"
+          }
+
+          ${
+            sidebarOpen
+
+              ? "translate-x-0"
+
+              : "-translate-x-full lg:translate-x-0"
           }
         `}>
 
@@ -223,17 +446,28 @@ export default function DashboardLayout({
           <div className="
             flex
             justify-end
+
             lg:hidden
+
             p-4
+
+            absolute
+            top-0
+            right-0
+            z-50
           ">
 
             <button
+
               onClick={() =>
                 setSidebarOpen(false)
               }
+
               className="
                 text-slate-400
                 hover:text-white
+
+                transition
               "
             >
 
@@ -243,32 +477,38 @@ export default function DashboardLayout({
 
           </div>
 
+
           {/* ==================================== */}
           {/* SIDEBAR */}
           {/* ==================================== */}
 
           <Sidebar
+
+            collapsed={collapsed}
+
             closeSidebar={() =>
               setSidebarOpen(false)
             }
+
           />
 
         </aside>
 
+
         {/* ====================================== */}
-        {/* MAIN */}
+        {/* MAIN CONTENT */}
         {/* ====================================== */}
 
         <main className="
           flex-1
+          min-w-0
+
+          overflow-x-hidden
           overflow-y-auto
-          scrollbar-thin
-          scrollbar-thumb-slate-700
-          scrollbar-track-transparent
         ">
 
           {/* ==================================== */}
-          {/* CONTENT WRAPPER */}
+          {/* CONTENT */}
           {/* ==================================== */}
 
           <div className="
@@ -278,9 +518,11 @@ export default function DashboardLayout({
           ">
 
             <div className="
-              max-w-[1600px]
+              max-w-[1800px]
               mx-auto
+
               space-y-6
+
               animate-fadeIn
             ">
 
@@ -297,49 +539,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-// import Navbar from "./Navbar";
-// import Sidebar from "./Sidebar";
-
-// export default function DashboardLayout({ children }) {
-//   return (
-//     <div className="h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-
-//       {/* Sticky Navbar */}
-//       <div className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/70 border-b border-slate-800">
-//         <Navbar />
-//       </div>
-
-//       {/* Body */}
-//       <div className="flex flex-1 overflow-hidden">
-
-//         {/* Sidebar with border */}
-//         <div className="border-r border-slate-800 bg-slate-900/80 backdrop-blur-md">
-//           <Sidebar />
-//         </div>
-
-//         {/* Main Content */}
-//         <main className="flex-1 overflow-y-auto p-6">
-
-//           {/* Container */}
-//           <div className="max-w-7xl mx-auto space-y-6">
-//             {children}
-//           </div>
-
-//         </main>
-
-//       </div>
-//     </div>
-//   );
-// }

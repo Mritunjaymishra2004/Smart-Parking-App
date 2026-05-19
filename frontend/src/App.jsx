@@ -9,15 +9,18 @@ import {
   Navigate,
 } from "react-router-dom";
 
-import { useAuth } from "./context/AuthContext";
+import {
+  useAuth,
+} from "./context/AuthContext";
 
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute
+  from "./components/ProtectedRoute";
+
 
 // ======================================================
-// LAZY LOAD PAGES
+// PUBLIC PAGES
 // ======================================================
 
-// Public
 const PublicDashboard = lazy(() =>
   import("./pages/PublicDashboard")
 );
@@ -30,15 +33,11 @@ const Signup = lazy(() =>
   import("./pages/auth/Signup")
 );
 
-const ForgotPassword = lazy(() =>
-  import("./pages/auth/ForgotPassword")
-);
 
-const ResetPassword = lazy(() =>
-  import("./pages/auth/ResetPassword")
-);
+// ======================================================
+// USER PAGES
+// ======================================================
 
-// User
 const UserDashboard = lazy(() =>
   import("./pages/user/UserDashboard")
 );
@@ -55,47 +54,27 @@ const MyBookings = lazy(() =>
   import("./pages/booking/MyBookings")
 );
 
-const PaymentPage = lazy(() =>
-  import("./pages/PaymentPage")
-);
-
-const NavigationPage = lazy(() =>
-  import("./pages/NavigationPage")
-);
-
 const Profile = lazy(() =>
   import("./pages/Profile")
 );
 
-const LiveParkingMap = lazy(() =>
-  import("./components/map/LiveParkingMap")
-);
 
-// Admin
+// ======================================================
+// ADMIN PAGES
+// ======================================================
+
 const AdminDashboard = lazy(() =>
   import("./pages/admin/AdminDashboard")
 );
 
-const AdminLiveMap = lazy(() =>
-  import("./pages/admin/AdminLiveMap")
+const Analytics = lazy(() =>
+  import("./pages/admin/Analytics")
 );
 
-const AdminViolations = lazy(() =>
-  import("./pages/admin/AdminViolations")
+const Reports = lazy(() =>
+  import("./pages/admin/Reports")
 );
 
-// ======================================================
-// DASHBOARD REDIRECT
-// ======================================================
-
-function DashboardRedirect() {
-
-  const { viewRole } = useAuth();
-
-  return viewRole === "admin"
-    ? <Navigate to="/admin" replace />
-    : <Navigate to="/user-dashboard" replace />;
-}
 
 // ======================================================
 // LOADING SCREEN
@@ -104,20 +83,106 @@ function DashboardRedirect() {
 function LoadingScreen() {
 
   return (
+
     <div className="
-      h-screen
+      min-h-screen
       flex
       items-center
       justify-center
-      bg-slate-900
+      bg-slate-950
       text-white
-      text-xl
-      font-semibold
     ">
-      Loading Smart Parking...
+
+      <div className="
+        flex
+        flex-col
+        items-center
+        gap-4
+      ">
+
+        <div className="
+          w-14
+          h-14
+          rounded-full
+          border-4
+          border-emerald-500
+          border-t-transparent
+          animate-spin
+        " />
+
+        <p className="
+          text-lg
+          font-semibold
+        ">
+
+          Loading Smart Parking...
+
+        </p>
+
+      </div>
+
     </div>
   );
 }
+
+
+// ======================================================
+// ERROR FALLBACK
+// ======================================================
+
+function ErrorFallback() {
+
+  return (
+
+    <div className="
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-slate-950
+      text-red-400
+      text-xl
+      font-semibold
+    ">
+
+      Something went wrong.
+
+    </div>
+  );
+}
+
+
+// ======================================================
+// DASHBOARD REDIRECT
+// ======================================================
+
+function DashboardRedirect() {
+
+  const { user } =
+    useAuth();
+
+  if (!user) {
+
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+  // ==============================================
+  // TEMP SAFE REDIRECT
+  // ==============================================
+
+  return (
+    <Navigate
+      to="/user-dashboard"
+      replace
+    />
+  );
+}
+
 
 // ======================================================
 // APP
@@ -125,20 +190,39 @@ function LoadingScreen() {
 
 export default function App() {
 
-  const { user, loading } = useAuth();
+  const {
+
+    user,
+
+    loading,
+
+  } = useAuth();
+
+
+  // ====================================================
+  // GLOBAL LOADING
+  // ====================================================
 
   if (loading) {
+
     return <LoadingScreen />;
   }
 
+
+  // ====================================================
+  // ROUTES
+  // ====================================================
+
   return (
 
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense
+      fallback={<LoadingScreen />}
+    >
 
       <Routes>
 
         {/* ========================================= */}
-        {/* PUBLIC ROUTES */}
+        {/* PUBLIC */}
         {/* ========================================= */}
 
         <Route
@@ -149,30 +233,37 @@ export default function App() {
         <Route
           path="/login"
           element={
-            !user
-              ? <Login />
-              : <Navigate to="/dashboard" replace />
+
+            user
+
+              ? (
+                <Navigate
+                  to="/dashboard"
+                  replace
+                />
+              )
+
+              : <Login />
           }
         />
 
         <Route
           path="/signup"
           element={
-            !user
-              ? <Signup />
-              : <Navigate to="/dashboard" replace />
+
+            user
+
+              ? (
+                <Navigate
+                  to="/dashboard"
+                  replace
+                />
+              )
+
+              : <Signup />
           }
         />
 
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
-
-        <Route
-          path="/reset-password"
-          element={<ResetPassword />}
-        />
 
         {/* ========================================= */}
         {/* DASHBOARD REDIRECT */}
@@ -181,21 +272,28 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
+
             <ProtectedRoute>
+
               <DashboardRedirect />
+
             </ProtectedRoute>
           }
         />
 
+
         {/* ========================================= */}
-        {/* USER ROUTES */}
+        {/* USER */}
         {/* ========================================= */}
 
         <Route
           path="/user-dashboard"
           element={
-            <ProtectedRoute role="user">
+
+            <ProtectedRoute>
+
               <UserDashboard />
+
             </ProtectedRoute>
           }
         />
@@ -203,17 +301,11 @@ export default function App() {
         <Route
           path="/slots"
           element={
-            <ProtectedRoute role="user">
-              <Slots />
-            </ProtectedRoute>
-          }
-        />
 
-        <Route
-          path="/map"
-          element={
-            <ProtectedRoute role="user">
-              <LiveParkingMap />
+            <ProtectedRoute>
+
+              <Slots />
+
             </ProtectedRoute>
           }
         />
@@ -221,8 +313,11 @@ export default function App() {
         <Route
           path="/book/:slotId"
           element={
-            <ProtectedRoute role="user">
+
+            <ProtectedRoute>
+
               <BookSlot />
+
             </ProtectedRoute>
           }
         />
@@ -230,73 +325,68 @@ export default function App() {
         <Route
           path="/my-bookings"
           element={
-            <ProtectedRoute role="user">
+
+            <ProtectedRoute>
+
               <MyBookings />
+
             </ProtectedRoute>
           }
         />
 
         <Route
-          path="/navigate"
+          path="/profile"
           element={
-            <ProtectedRoute role="user">
-              <NavigationPage />
+
+            <ProtectedRoute>
+
+              <Profile />
+
             </ProtectedRoute>
           }
         />
 
-        <Route
-          path="/payment"
-          element={
-            <ProtectedRoute role="user">
-              <PaymentPage />
-            </ProtectedRoute>
-          }
-        />
 
         {/* ========================================= */}
-        {/* ADMIN ROUTES */}
+        {/* ADMIN */}
         {/* ========================================= */}
 
         <Route
           path="/admin"
           element={
-            <ProtectedRoute role="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
 
-        <Route
-          path="/admin/map"
-          element={
-            <ProtectedRoute role="admin">
-              <AdminLiveMap />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/violations"
-          element={
-            <ProtectedRoute role="admin">
-              <AdminViolations />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ========================================= */}
-        {/* PROFILE */}
-        {/* ========================================= */}
-
-        <Route
-          path="/profile"
-          element={
             <ProtectedRoute>
-              <Profile />
+
+              <AdminDashboard />
+
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/admin/analytics"
+          element={
+
+            <ProtectedRoute>
+
+              <Analytics />
+
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/reports"
+          element={
+
+            <ProtectedRoute>
+
+              <Reports />
+
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* ========================================= */}
         {/* FALLBACK */}
@@ -305,9 +395,15 @@ export default function App() {
         <Route
           path="*"
           element={
-            user
-              ? <Navigate to="/dashboard" replace />
-              : <Navigate to="/login" replace />
+
+            <Navigate
+              to={
+                user
+                  ? "/dashboard"
+                  : "/login"
+              }
+              replace
+            />
           }
         />
 
@@ -316,202 +412,3 @@ export default function App() {
     </Suspense>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { Routes, Route, Navigate } from "react-router-dom";
-// import { useAuth } from "./context/AuthContext";
-
-// // Public Pages
-// import PublicDashboard from "./pages/PublicDashboard";
-// import Login from "./pages/auth/Login";
-// import Signup from "./pages/auth/Signup";
-// import ForgotPassword from "./pages/auth/ForgotPassword";
-// import ResetPassword from "./pages/auth/ResetPassword";
-
-// // User Pages
-// import UserDashboard from "./pages/user/UserDashboard";
-// import Slots from "./pages/user/Slots";
-// import BookSlot from "./pages/booking/BookSlot";
-// import MyBookings from "./pages/booking/MyBookings";
-// import PaymentPage from "./pages/PaymentPage";
-// import NavigationPage from "./pages/NavigationPage";
-// import Profile from "./pages/Profile";
-// import LiveParkingMap from "./components/map/LiveParkingMap";
-
-// // Admin Pages
-// import AdminDashboard from "./pages/admin/AdminDashboard";
-// import AdminLiveMap from "./pages/admin/AdminLiveMap";
-// import AdminViolations from "./pages/admin/AdminViolations";
-
-// import ProtectedRoute from "./components/ProtectedRoute";
-
-// function DashboardRedirect() {
-//   const { viewRole } = useAuth();
-
-//   return viewRole === "admin"
-//     ? <Navigate to="/admin" replace />
-//     : <Navigate to="/user-dashboard" replace />;
-// }
-
-// export default function App() {
-//   const { user, loading } = useAuth();
-
-//   if (loading) {
-//     return (
-//       <div className="h-screen flex items-center justify-center bg-slate-900 text-white text-lg">
-//         Initializing App...
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <Routes>
-//       <Route path="/" element={<PublicDashboard />} />
-
-//       <Route
-//         path="/login"
-//         element={!user ? <Login /> : <Navigate to="/dashboard" replace />}
-//       />
-
-//       <Route
-//         path="/signup"
-//         element={!user ? <Signup /> : <Navigate to="/dashboard" replace />}
-//       />
-
-//       <Route path="/forgot-password" element={<ForgotPassword />} />
-//       <Route path="/reset-password" element={<ResetPassword />} />
-
-//       <Route
-//         path="/dashboard"
-//         element={
-//           <ProtectedRoute>
-//             <DashboardRedirect />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/user-dashboard"
-//         element={
-//           <ProtectedRoute role="user">
-//             <UserDashboard />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/slots"
-//         element={
-//           <ProtectedRoute role="user">
-//             <Slots />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/map"
-//         element={
-//           <ProtectedRoute role="user">
-//             <LiveParkingMap />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/book/:slotId"
-//         element={
-//           <ProtectedRoute role="user">
-//             <BookSlot />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/my-bookings"
-//         element={
-//           <ProtectedRoute role="user">
-//             <MyBookings />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/navigate"
-//         element={
-//           <ProtectedRoute role="user">
-//             <NavigationPage />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/payment"
-//         element={
-//           <ProtectedRoute role="user">
-//             <PaymentPage />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/admin"
-//         element={
-//           <ProtectedRoute role="admin">
-//             <AdminDashboard />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/admin/map"
-//         element={
-//           <ProtectedRoute role="admin">
-//             <AdminLiveMap />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/admin/violations"
-//         element={
-//           <ProtectedRoute role="admin">
-//             <AdminViolations />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="/profile"
-//         element={
-//           <ProtectedRoute>
-//             <Profile />
-//           </ProtectedRoute>
-//         }
-//       />
-
-//       <Route
-//         path="*"
-//         element={
-//           user
-//             ? <Navigate to="/dashboard" replace />
-//             : <Navigate to="/login" replace />
-//         }
-//       />
-//     </Routes>
-//   );
-// }
-

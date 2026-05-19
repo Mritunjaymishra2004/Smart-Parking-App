@@ -92,7 +92,7 @@ urlpatterns = [
     ),
 
     # =====================================================
-    # RESERVATIONS
+    # RESERVATIONS / BOOKINGS
     # =====================================================
 
     path(
@@ -111,6 +111,16 @@ urlpatterns = [
         "v1/reservations/cancel/",
         views.cancel_booking,
         name="cancel_reservation",
+    ),
+
+    # =====================================================
+    # ADMIN BOOKINGS
+    # =====================================================
+
+    path(
+        "v1/admin/bookings/",
+        views.admin_bookings,
+        name="admin_bookings",
     ),
 
     # =====================================================
@@ -145,6 +155,22 @@ urlpatterns = [
         name="payments",
     ),
 
+    path(
+        "v1/admin/payments/",
+        views.admin_payments,
+        name="admin_payments",
+    ),
+
+    # =====================================================
+    # ANALYTICS
+    # =====================================================
+
+    path(
+        "v1/analytics/dashboard/",
+        views.admin_stats,
+        name="analytics_dashboard",
+    ),
+
     # =====================================================
     # WALLET
     # =====================================================
@@ -172,12 +198,6 @@ urlpatterns = [
     ),
 
     path(
-        "v1/admin/bookings/",
-        views.admin_bookings,
-        name="admin_bookings",
-    ),
-
-    path(
         "v1/admin/sessions/",
         views.admin_sessions,
         name="admin_sessions",
@@ -202,12 +222,6 @@ urlpatterns = [
     ),
 
     path(
-        "v1/admin/payments/",
-        views.admin_payments,
-        name="admin_payments",
-    ),
-
-    path(
         "v1/admin/live-vehicles/",
         views.admin_live_vehicles,
         name="admin_live_vehicles",
@@ -225,4 +239,3 @@ urlpatterns = [
         name="admin_add_money",
     ),
 ]
-

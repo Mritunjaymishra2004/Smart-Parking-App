@@ -15,6 +15,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useCallback,
 } from "react";
 
 import {
@@ -36,23 +37,114 @@ import {
   useWebSocket,
 } from "../../websocket/WebSocketContext";
 
-import VehiclePickerModal from "../user/VehiclePickerModal";
+import VehiclePickerModal
+  from "../user/VehiclePickerModal";
 
-import useParkingData from "../../hooks/useParkingData";
+import useParkingData
+  from "../../hooks/useParkingData";
+
 
 // ======================================================
-// AUTO RECENTER COMPONENT
+// DEFAULT CENTER
+// ======================================================
+
+const DEFAULT_CENTER =
+
+  [28.6105, 77.2007];
+
+
+// ======================================================
+// SAFE NUMBER
+// ======================================================
+
+const isValidCoordinate =
+  (value) => {
+
+    return (
+      typeof value === "number" &&
+      !Number.isNaN(value)
+    );
+  };
+
+
+// ======================================================
+// HAVERSINE DISTANCE
+// ======================================================
+
+const getDistance = (
+
+  lat1,
+
+  lon1,
+
+  lat2,
+
+  lon2
+
+) => {
+
+  const toRad =
+    (deg) =>
+
+      deg * (
+        Math.PI / 180
+      );
+
+  const R = 6371;
+
+  const dLat =
+    toRad(lat2 - lat1);
+
+  const dLon =
+    toRad(lon2 - lon1);
+
+  const a =
+
+    Math.sin(dLat / 2) *
+    Math.sin(dLat / 2)
+
+    +
+
+    Math.cos(
+      toRad(lat1)
+    ) *
+
+    Math.cos(
+      toRad(lat2)
+    ) *
+
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+
+  const c =
+
+    2 * Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    );
+
+  return R * c;
+};
+
+
+// ======================================================
+// RECENTER
 // ======================================================
 
 function RecenterMap({
+
   center,
+
 }) {
 
-  const map = useMap();
+  const map =
+    useMap();
 
   useEffect(() => {
 
-    if (center) {
+    if (
+      Array.isArray(center)
+    ) {
 
       map.setView(center);
     }
@@ -61,6 +153,7 @@ function RecenterMap({
 
   return null;
 }
+
 
 // ======================================================
 // MAIN COMPONENT
@@ -77,33 +170,43 @@ export default function LiveParkingMap() {
   const { startParking } =
     useParking();
 
-  const { lastMessage } =
+  const { connected } =
     useWebSocket();
 
   const {
+
     slots,
+
     vehicles,
+
     loading,
+
   } = useParkingData();
+
 
   // ====================================================
   // STATE
   // ====================================================
 
-  const [userLocation, setUserLocation] =
+  const [userLocation,
+    setUserLocation] =
     useState(null);
 
-  const [selectedSlot, setSelectedSlot] =
+  const [selectedSlot,
+    setSelectedSlot] =
     useState(null);
 
-  const [showVehicleModal, setShowVehicleModal] =
+  const [showVehicleModal,
+    setShowVehicleModal] =
     useState(false);
 
-  const [message, setMessage] =
+  const [message,
+    setMessage] =
     useState("");
 
   const mapRef =
     useRef(null);
+
 
   // ====================================================
   // GEOLOCATION
@@ -122,13 +225,25 @@ export default function LiveParkingMap() {
       return;
     }
 
+    const geoOptions = {
+
+      enableHighAccuracy:
+        true,
+
+      timeout: 10000,
+
+      maximumAge: 30000,
+    };
+
     navigator.geolocation.getCurrentPosition(
 
-      (pos) => {
+      (position) => {
 
         setUserLocation([
-          pos.coords.latitude,
-          pos.coords.longitude,
+
+          position.coords.latitude,
+
+          position.coords.longitude,
         ]);
       },
 
@@ -137,10 +252,13 @@ export default function LiveParkingMap() {
         setMessage(
           "Location access denied"
         );
-      }
+      },
+
+      geoOptions
     );
 
   }, []);
+
 
   // ====================================================
   // AUTO CLEAR MESSAGE
@@ -148,225 +266,235 @@ export default function LiveParkingMap() {
 
   useEffect(() => {
 
-    if (!message) return;
+    if (!message) {
+
+      return;
+    }
 
     const timer =
       setTimeout(() => {
 
         setMessage("");
+
       }, 3000);
 
-    return () =>
+    return () => {
+
       clearTimeout(timer);
+    };
 
   }, [message]);
 
-  // ====================================================
-  // WEBSOCKET LIVE EVENTS
-  // ====================================================
-
-  useEffect(() => {
-
-    if (!lastMessage) return;
-
-    console.log(
-      "Live WebSocket update:",
-      lastMessage
-    );
-
-  }, [lastMessage]);
 
   // ====================================================
-  // SAFE SLOT DATA
+  // SAFE SLOTS
   // ====================================================
 
-  const safeSlots = useMemo(() => {
+  const safeSlots =
+    useMemo(() => {
 
-    if (
-      Array.isArray(slots) &&
-      slots.length
-    ) {
+      if (
+        !Array.isArray(slots)
+      ) {
+
+        return [];
+      }
 
       return slots.filter(
         (slot) => (
-          slot?.x &&
-          slot?.y
+
+          isValidCoordinate(
+            slot?.x
+          )
+
+          &&
+
+          isValidCoordinate(
+            slot?.y
+          )
         )
       );
-    }
 
-    // ================================================
-    // FALLBACK SLOT
-    // ================================================
+    }, [slots]);
 
-    return [
-      {
-        id: 1,
-        code: "A1",
-        x: 77.2001,
-        y: 28.6101,
-        status: "AVAILABLE",
-      },
-    ];
-
-  }, [slots]);
 
   // ====================================================
-  // DISTANCE
+  // SAFE VEHICLES
   // ====================================================
 
-  const getDistance = (
-    lat1,
-    lon1,
-    lat2,
-    lon2
-  ) => {
+  const safeVehicles =
+    useMemo(() => {
 
-    return Math.sqrt(
+      if (
+        !Array.isArray(vehicles)
+      ) {
 
-      Math.pow(lat1 - lat2, 2) +
+        return [];
+      }
 
-      Math.pow(lon1 - lon2, 2)
-    );
-  };
+      return vehicles.filter(
+        (vehicle) => (
+
+          isValidCoordinate(
+            vehicle?.x
+          )
+
+          &&
+
+          isValidCoordinate(
+            vehicle?.y
+          )
+        )
+      );
+
+    }, [vehicles]);
+
 
   // ====================================================
   // SLOT CLICK
   // ====================================================
 
-  const onSlotClick = (
-    slot
-  ) => {
+  const onSlotClick =
+    useCallback((slot) => {
 
-    // ================================================
-    // SLOT STATUS
-    // ================================================
+      if (
+        slot.status ===
+        "OCCUPIED"
+      ) {
 
-    if (
-      slot.status === "OCCUPIED"
-    ) {
+        setMessage(
+          "Slot already occupied"
+        );
 
-      setMessage(
-        "Slot already occupied"
-      );
-
-      return;
-    }
-
-    if (
-      slot.status === "RESERVED"
-    ) {
-
-      setMessage(
-        "Slot already reserved"
-      );
-
-      return;
-    }
-
-    // ================================================
-    // VEHICLE CHECK
-    // ================================================
-
-    if (
-      !user?.vehicles?.length
-    ) {
-
-      navigate(
-        "/add-vehicle"
-      );
-
-      return;
-    }
-
-    // ================================================
-    // SINGLE VEHICLE
-    // ================================================
-
-    if (
-      user.vehicles.length === 1
-    ) {
-
-      startParking(
-        slot,
-        user.vehicles[0]
-      );
-
-      return;
-    }
-
-    // ================================================
-    // MULTIPLE VEHICLES
-    // ================================================
-
-    setSelectedSlot(slot);
-
-    setShowVehicleModal(true);
-  };
-
-  // ====================================================
-  // FIND NEAREST SLOT
-  // ====================================================
-
-  const findNearestSlot = () => {
-
-    if (!userLocation) {
-
-      setMessage(
-        "Location unavailable"
-      );
-
-      return;
-    }
-
-    let nearest = null;
-
-    let minDist =
-      Infinity;
-
-    safeSlots.forEach(
-      (slot) => {
-
-        if (
-          slot.status !==
-          "AVAILABLE"
-        ) {
-
-          return;
-        }
-
-        const dist =
-          getDistance(
-
-            userLocation[0],
-            userLocation[1],
-
-            slot.y,
-            slot.x
-          );
-
-        if (
-          dist < minDist
-        ) {
-
-          minDist = dist;
-
-          nearest = slot;
-        }
+        return;
       }
-    );
 
-    if (!nearest) {
+      if (
+        slot.status ===
+        "RESERVED"
+      ) {
 
-      setMessage(
-        "No free slots available"
+        setMessage(
+          "Slot already reserved"
+        );
+
+        return;
+      }
+
+      if (
+        !user?.vehicles?.length
+      ) {
+
+        navigate(
+          "/add-vehicle"
+        );
+
+        return;
+      }
+
+      if (
+        user.vehicles.length === 1
+      ) {
+
+        startParking(
+          slot,
+          user.vehicles[0]
+        );
+
+        return;
+      }
+
+      setSelectedSlot(slot);
+
+      setShowVehicleModal(true);
+
+    }, [
+
+      navigate,
+
+      startParking,
+
+      user,
+    ]);
+
+
+  // ====================================================
+  // FIND NEAREST
+  // ====================================================
+
+  const findNearestSlot =
+    useCallback(() => {
+
+      if (
+        !userLocation
+      ) {
+
+        setMessage(
+          "Location unavailable"
+        );
+
+        return;
+      }
+
+      let nearest = null;
+
+      let minDistance =
+        Infinity;
+
+      safeSlots.forEach(
+        (slot) => {
+
+          if (
+            slot.status !==
+            "AVAILABLE"
+          ) {
+
+            return;
+          }
+
+          const distance =
+            getDistance(
+
+              userLocation[0],
+              userLocation[1],
+
+              slot.y,
+              slot.x
+            );
+
+          if (
+            distance <
+            minDistance
+          ) {
+
+            minDistance =
+              distance;
+
+            nearest = slot;
+          }
+        }
       );
 
-      return;
-    }
+      if (!nearest) {
 
-    onSlotClick(nearest);
-  };
+        setMessage(
+          "No free slots available"
+        );
+
+        return;
+      }
+
+      onSlotClick(nearest);
+
+    }, [
+
+      userLocation,
+
+      safeSlots,
+
+      onSlotClick,
+    ]);
+
 
   // ====================================================
   // LOADING
@@ -384,10 +512,13 @@ export default function LiveParkingMap() {
         text-white
         text-lg
       ">
+
         Loading Live Map...
+
       </div>
     );
   }
+
 
   // ====================================================
   // UI
@@ -401,9 +532,7 @@ export default function LiveParkingMap() {
       h-full
     ">
 
-      {/* ========================================== */}
       {/* MESSAGE */}
-      {/* ========================================== */}
 
       {message && (
 
@@ -420,51 +549,109 @@ export default function LiveParkingMap() {
           z-[1000]
           shadow-xl
         ">
+
           {message}
+
         </div>
       )}
 
-      {/* ========================================== */}
+
       {/* FIND BUTTON */}
-      {/* ========================================== */}
 
       <button
-        onClick={findNearestSlot}
+
+        type="button"
+
+        onClick={
+          findNearestSlot
+        }
+
         className="
           absolute
           top-4
           left-4
           z-[1000]
+
           bg-emerald-600
           hover:bg-emerald-700
+
           text-white
+
           px-4
           py-2
+
           rounded-xl
+
           shadow-lg
+
           transition
         "
       >
+
         Find Nearest
+
       </button>
 
-      {/* ========================================== */}
+
+      {/* CONNECTION STATUS */}
+
+      <div className={`
+        absolute
+        top-4
+        right-4
+        z-[1000]
+
+        px-3
+        py-2
+
+        rounded-xl
+
+        text-sm
+        font-medium
+
+        ${
+          connected
+
+            ? `
+              bg-emerald-500/20
+              text-emerald-400
+            `
+
+            : `
+              bg-yellow-500/20
+              text-yellow-400
+            `
+        }
+      `}>
+
+        {
+          connected
+
+            ? "Realtime Connected"
+
+            : "Polling Mode"
+        }
+
+      </div>
+
+
       {/* MAP */}
-      {/* ========================================== */}
 
       <MapContainer
+
         center={
           userLocation ||
-          [28.6105, 77.2007]
+          DEFAULT_CENTER
         }
+
         zoom={16}
+
+        ref={mapRef}
+
         className="
           absolute
           inset-0
         "
-        whenCreated={(map) => {
-          mapRef.current = map;
-        }}
       >
 
         <RecenterMap
@@ -472,27 +659,33 @@ export default function LiveParkingMap() {
         />
 
         <TileLayer
-          attribution="OpenStreetMap"
+
+          attribution="
+            © OpenStreetMap contributors
+          "
+
           url="
-          https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+            https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
           "
         />
 
-        {/* ====================================== */}
+
         {/* SLOTS */}
-        {/* ====================================== */}
 
         {safeSlots.map(
           (slot) => (
 
             <Marker
+
               key={slot.id}
+
               position={[
                 slot.y,
                 slot.x,
               ]}
 
               icon={
+
                 slot.status ===
                 "OCCUPIED"
 
@@ -536,14 +729,14 @@ export default function LiveParkingMap() {
           )
         )}
 
-        {/* ====================================== */}
-        {/* VEHICLES */}
-        {/* ====================================== */}
 
-        {vehicles?.map(
+        {/* VEHICLES */}
+
+        {safeVehicles.map(
           (vehicle) => (
 
             <Marker
+
               key={
                 vehicle.vehicle_id
               }
@@ -558,7 +751,8 @@ export default function LiveParkingMap() {
 
               <Popup>
 
-                {vehicle.plate ||
+                {
+                  vehicle.plate ||
 
                   `Vehicle ${vehicle.vehicle_id}`
                 }
@@ -569,9 +763,8 @@ export default function LiveParkingMap() {
           )
         )}
 
-        {/* ====================================== */}
+
         {/* USER */}
-        {/* ====================================== */}
 
         {userLocation && (
 
@@ -590,19 +783,24 @@ export default function LiveParkingMap() {
 
       </MapContainer>
 
-      {/* ========================================== */}
+
       {/* LEGEND */}
-      {/* ========================================== */}
 
       <div className="
         absolute
         bottom-4
         left-4
+
         bg-black/70
+
         text-white
+
         p-3
+
         rounded-xl
+
         text-sm
+
         z-[1000]
       ">
 
@@ -624,9 +822,8 @@ export default function LiveParkingMap() {
 
       </div>
 
-      {/* ========================================== */}
+
       {/* VEHICLE MODAL */}
-      {/* ========================================== */}
 
       {showVehicleModal && (
 
@@ -636,9 +833,7 @@ export default function LiveParkingMap() {
             user?.vehicles || []
           }
 
-          onSelect={(
-            vehicle
-          ) => {
+          onSelect={(vehicle) => {
 
             startParking(
               selectedSlot,
@@ -659,6 +854,10 @@ export default function LiveParkingMap() {
             setShowVehicleModal(
               false
             );
+
+            setSelectedSlot(
+              null
+            );
           }}
         />
       )}
@@ -666,255 +865,3 @@ export default function LiveParkingMap() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-// import { useNavigate } from "react-router-dom";
-// import { useState, useEffect, useMemo, useRef } from "react";
-
-// import {
-//   freeSlotIcon,
-//   busySlotIcon,
-//   reservedIcon,
-//   carIcon,
-// } from "../../utils/leafletIcon";
-
-// import { useAuth } from "../../context/AuthContext";
-// import { useParking } from "../../context/ParkingContext";
-// import VehiclePickerModal from "../user/VehiclePickerModal";
-// import useParkingData from "../../hooks/useParkingData";
-
-// export default function LiveParkingMap() {
-//   const navigate = useNavigate();
-//   const { user } = useAuth();
-//   const { startParking } = useParking();
-
-//   const { slots, vehicles, loading } = useParkingData();
-
-//   const [userLocation, setUserLocation] = useState(null);
-//   const [selectedSlot, setSelectedSlot] = useState(null);
-//   const [showVehicleModal, setShowVehicleModal] = useState(false);
-//   const [message, setMessage] = useState("");
-
-//   const mapRef = useRef(null);
-
-//   // ==============================
-//   // 📍 USER LOCATION (SAFE)
-//   // ==============================
-//   useEffect(() => {
-//     if (!navigator.geolocation) return;
-
-//     navigator.geolocation.getCurrentPosition(
-//       (pos) => {
-//         setUserLocation([pos.coords.latitude, pos.coords.longitude]);
-//       },
-//       () => {
-//         setMessage("Location access denied");
-//       }
-//     );
-//   }, []);
-
-//   // ==============================
-//   // 📦 SAFE SLOT DATA
-//   // ==============================
-//   const safeSlots = useMemo(() => {
-//     if (slots?.length) return slots;
-
-//     return [
-//       {
-//         id: 1,
-//         code: "A1",
-//         x: 77.2001,
-//         y: 28.6101,
-//         is_occupied: false,
-//         is_reserved: false,
-//       },
-//     ];
-//   }, [slots]);
-
-//   // ==============================
-//   // 📏 DISTANCE FUNCTION (BETTER)
-//   // ==============================
-//   const getDistance = (lat1, lon1, lat2, lon2) => {
-//     return Math.sqrt(
-//       Math.pow(lat1 - lat2, 2) + Math.pow(lon1 - lon2, 2)
-//     );
-//   };
-
-//   // ==============================
-//   // 🚗 SLOT CLICK
-//   // ==============================
-//   const onSlotClick = (slot) => {
-//     if (slot.is_occupied) {
-//       setMessage("Slot already occupied");
-//       return;
-//     }
-
-//     if (slot.is_reserved) {
-//       setMessage("Slot is reserved");
-//       return;
-//     }
-
-//     if (!user?.vehicles?.length) {
-//       navigate("/add-vehicle");
-//       return;
-//     }
-
-//     if (user.vehicles.length === 1) {
-//       startParking(slot, user.vehicles[0]);
-//     } else {
-//       setSelectedSlot(slot);
-//       setShowVehicleModal(true);
-//     }
-//   };
-
-//   // ==============================
-//   // 📍 FIND NEAREST SLOT
-//   // ==============================
-//   const findNearestSlot = () => {
-//     if (!userLocation) {
-//       setMessage("Location not available");
-//       return;
-//     }
-
-//     let nearest = null;
-//     let minDist = Infinity;
-
-//     safeSlots.forEach((slot) => {
-//       if (slot.is_occupied || slot.is_reserved) return;
-
-//       const dist = getDistance(
-//         userLocation[0],
-//         userLocation[1],
-//         slot.y,
-//         slot.x
-//       );
-
-//       if (dist < minDist) {
-//         minDist = dist;
-//         nearest = slot;
-//       }
-//     });
-
-//     if (!nearest) {
-//       setMessage("No free slots available");
-//       return;
-//     }
-
-//     onSlotClick(nearest);
-//   };
-
-//   // ==============================
-//   // LOADING
-//   // ==============================
-//   if (loading) {
-//     return (
-//       <div className="flex items-center justify-center h-full text-white">
-//         Loading Map...
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="relative w-full h-full">
-//       {/* MESSAGE */}
-//       {message && (
-//         <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded z-[1000]">
-//           {message}
-//         </div>
-//       )}
-
-//       {/* FIND BUTTON */}
-//       <button
-//         onClick={findNearestSlot}
-//         className="absolute top-4 left-4 z-[1000] bg-emerald-600 px-4 py-2 rounded shadow hover:bg-emerald-700 text-white"
-//       >
-//         Find Nearest
-//       </button>
-
-//       <MapContainer
-//         center={userLocation || [28.6105, 77.2007]}
-//         zoom={16}
-//         className="absolute inset-0"
-//         whenCreated={(map) => (mapRef.current = map)}
-//       >
-//         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-//         {/* SLOTS */}
-//         {safeSlots.map((slot) => (
-//           <Marker
-//             key={slot.id}
-//             position={[slot.y, slot.x]}
-//             icon={
-//   slot.status === "OCCUPIED"
-//     ? busySlotIcon
-//     : slot.status === "RESERVED"
-//     ? reservedIcon
-//     : freeSlotIcon
-// }
-//             eventHandlers={{
-//               click: () => onSlotClick(slot),
-//             }}
-//           >
-//             <Popup>
-//               <b>Slot {slot.code}</b>
-//               <br />
-//               {slot.status}
-//             </Popup>
-//           </Marker>
-//         ))}
-
-//         {/* VEHICLES */}
-//         {vehicles?.map((v) => (
-//           <Marker key={v.vehicle_id} position={[v.y, v.x]} icon={carIcon}>
-//             <Popup>{v.plate || `Vehicle ${v.vehicle_id}`}</Popup>
-//           </Marker>
-//         ))}
-
-//         {/* USER */}
-//         {userLocation && (
-//           <Marker position={userLocation}>
-//             <Popup>You are here</Popup>
-//           </Marker>
-//         )}
-//       </MapContainer>
-
-//       {/* LEGEND */}
-//       <div className="absolute bottom-4 left-4 bg-black/70 text-white p-3 rounded text-sm">
-//         <div>🟢 Available</div>
-//         <div>🟡 Reserved</div>
-//         <div>🔴 Occupied</div>
-//         <div>🚗 Vehicles</div>
-//       </div>
-
-//       {/* VEHICLE MODAL */}
-//       {showVehicleModal && (
-//         <VehiclePickerModal
-//           vehicles={user?.vehicles || []}
-//           onSelect={(vehicle) => {
-//             startParking(selectedSlot, vehicle);
-//             setShowVehicleModal(false);
-//             setSelectedSlot(null);
-//           }}
-//           onClose={() => setShowVehicleModal(false)}
-//         />
-//       )}
-//     </div>
-//   );
-// }
-
