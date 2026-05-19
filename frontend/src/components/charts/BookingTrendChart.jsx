@@ -71,7 +71,7 @@ export default function BookingTrendChart({
 
         <ResponsiveContainer
           width="100%"
-          height="100%"
+          height={320}
         >
 
           <LineChart data={data}>

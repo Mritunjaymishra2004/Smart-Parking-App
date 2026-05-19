@@ -38,11 +38,14 @@ const WebSocketContext =
 
 
 // ======================================================
-// MAX NOTIFICATIONS
+// CONSTANTS
 // ======================================================
 
 const MAX_NOTIFICATIONS =
   50;
+
+const CACHE_TIMEOUT =
+  5000;
 
 
 // ======================================================
@@ -102,11 +105,34 @@ export function WebSocketProvider({
 
 
   // ====================================================
-  // DUPLICATE PREVENTION
+  // REFS
   // ====================================================
+
+  const mounted =
+    useRef(true);
+
+  const initialized =
+    useRef(false);
 
   const notificationCache =
     useRef(new Set());
+
+
+  // ====================================================
+  // SAFE STATE UPDATE
+  // ====================================================
+
+  const safeSetState =
+    useCallback((setter, value) => {
+
+      if (
+        mounted.current
+      ) {
+
+        setter(value);
+      }
+
+    }, []);
 
 
   // ====================================================
@@ -116,9 +142,14 @@ export function WebSocketProvider({
   const addNotification =
     useCallback((notification) => {
 
+      if (!notification) {
+
+        return;
+      }
+
       const cacheKey =
 
-        `${notification.title}-${notification.message}`;
+        `${notification.title}-${notification.message}-${notification.type}`;
 
       // ==============================================
       // PREVENT DUPLICATES
@@ -139,11 +170,15 @@ export function WebSocketProvider({
         cacheKey
       );
 
+
+      // ==============================================
+      // NOTIFICATION OBJECT
+      // ==============================================
+
       const newNotification = {
 
         id:
-          Date.now() +
-          Math.random(),
+          crypto.randomUUID(),
 
         read: false,
 
@@ -154,10 +189,26 @@ export function WebSocketProvider({
           notification.type ||
           "info",
 
+        title:
+          notification.title ||
+          "Notification",
+
+        message:
+          notification.message ||
+          "",
+
         ...notification,
       };
 
-      setNotifications(
+
+      // ==============================================
+      // UPDATE STATE
+      // ==============================================
+
+      safeSetState(
+
+        setNotifications,
+
         (prev) => [
 
           newNotification,
@@ -169,6 +220,7 @@ export function WebSocketProvider({
         )
       );
 
+
       // ==============================================
       // CLEAN CACHE
       // ==============================================
@@ -179,9 +231,9 @@ export function WebSocketProvider({
           cacheKey
         );
 
-      }, 5000);
+      }, CACHE_TIMEOUT);
 
-    }, []);
+    }, [safeSetState]);
 
 
   // ====================================================
@@ -191,7 +243,10 @@ export function WebSocketProvider({
   const markAllRead =
     useCallback(() => {
 
-      setNotifications(
+      safeSetState(
+
+        setNotifications,
+
         (prev) =>
 
           prev.map((item) => ({
@@ -200,7 +255,7 @@ export function WebSocketProvider({
           }))
       );
 
-    }, []);
+    }, [safeSetState]);
 
 
   // ====================================================
@@ -210,9 +265,12 @@ export function WebSocketProvider({
   const clearNotifications =
     useCallback(() => {
 
-      setNotifications([]);
+      safeSetState(
+        setNotifications,
+        []
+      );
 
-    }, []);
+    }, [safeSetState]);
 
 
   // ====================================================
@@ -222,11 +280,20 @@ export function WebSocketProvider({
   const handleEvent =
     useCallback((event) => {
 
+      if (!event) {
+
+        return;
+      }
+
       // ==============================================
       // SAVE LAST MESSAGE
       // ==============================================
 
-      setLastMessage(event);
+      safeSetState(
+        setLastMessage,
+        event
+      );
+
 
       // ==============================================
       // EVENT TYPES
@@ -240,11 +307,20 @@ export function WebSocketProvider({
 
         case "connected":
 
-          setConnected(true);
+          safeSetState(
+            setConnected,
+            true
+          );
 
-          setReconnecting(false);
+          safeSetState(
+            setReconnecting,
+            false
+          );
 
-          setConnectionError(null);
+          safeSetState(
+            setConnectionError,
+            null
+          );
 
           break;
 
@@ -255,7 +331,10 @@ export function WebSocketProvider({
 
         case "disconnected":
 
-          setConnected(false);
+          safeSetState(
+            setConnected,
+            false
+          );
 
           break;
 
@@ -266,7 +345,10 @@ export function WebSocketProvider({
 
         case "reconnecting":
 
-          setReconnecting(true);
+          safeSetState(
+            setReconnecting,
+            true
+          );
 
           break;
 
@@ -277,9 +359,13 @@ export function WebSocketProvider({
 
         case "connection_error":
 
-          setConnected(false);
+          safeSetState(
+            setConnected,
+            false
+          );
 
-          setConnectionError(
+          safeSetState(
+            setConnectionError,
             event.error
           );
 
@@ -292,7 +378,8 @@ export function WebSocketProvider({
 
         case "slots_update":
 
-          setSlots(
+          safeSetState(
+            setSlots,
             event.payload || []
           );
 
@@ -305,7 +392,8 @@ export function WebSocketProvider({
 
         case "booking_update":
 
-          setBookings(
+          safeSetState(
+            setBookings,
             event.payload || []
           );
 
@@ -318,7 +406,8 @@ export function WebSocketProvider({
 
         case "payment_update":
 
-          setPayments(
+          safeSetState(
+            setPayments,
             event.payload || []
           );
 
@@ -331,7 +420,8 @@ export function WebSocketProvider({
 
         case "analytics_update":
 
-          setAnalytics(
+          safeSetState(
+            setAnalytics,
             event.payload || {}
           );
 
@@ -357,7 +447,10 @@ export function WebSocketProvider({
 
         case "session_expired":
 
-          setConnected(false);
+          safeSetState(
+            setConnected,
+            false
+          );
 
           addNotification({
 
@@ -380,9 +473,15 @@ export function WebSocketProvider({
 
         case "reconnect_failed":
 
-          setConnected(false);
+          safeSetState(
+            setConnected,
+            false
+          );
 
-          setReconnecting(false);
+          safeSetState(
+            setReconnecting,
+            false
+          );
 
           addNotification({
 
@@ -408,25 +507,52 @@ export function WebSocketProvider({
           break;
 
 
+        // ============================================
+        // DEFAULT
+        // ============================================
+
         default:
 
           break;
       }
 
-    }, [addNotification]);
+    }, [
+
+      addNotification,
+
+      safeSetState,
+    ]);
 
 
   // ====================================================
-  // CONNECT
+  // INITIALIZE SOCKET
   // ====================================================
 
   useEffect(() => {
 
+    mounted.current = true;
+
     // ==============================================
-    // START ENGINE
+    // PREVENT DUPLICATE INIT
+    // ==============================================
+
+    if (
+      initialized.current
+    ) {
+
+      return;
+    }
+
+    initialized.current =
+      true;
+
+
+    // ==============================================
+    // CONNECT
     // ==============================================
 
     connectWebSocket();
+
 
     // ==============================================
     // SUBSCRIBE
@@ -435,6 +561,7 @@ export function WebSocketProvider({
     const unsubscribe =
       subscribe(handleEvent);
 
+
     // ==============================================
     // INITIAL STATUS
     // ==============================================
@@ -442,9 +569,11 @@ export function WebSocketProvider({
     const status =
       getConnectionStatus();
 
-    setConnected(
+    safeSetState(
+      setConnected,
       status.connected
     );
+
 
     // ==============================================
     // CLEANUP
@@ -452,14 +581,25 @@ export function WebSocketProvider({
 
     return () => {
 
-      unsubscribe();
+      mounted.current =
+        false;
+
+      unsubscribe?.();
 
       disconnectWebSocket();
 
-      setConnected(false);
+      safeSetState(
+        setConnected,
+        false
+      );
     };
 
-  }, [handleEvent]);
+  }, [
+
+    handleEvent,
+
+    safeSetState,
+  ]);
 
 
   // ====================================================
@@ -477,6 +617,7 @@ export function WebSocketProvider({
 
       connectionError,
 
+
       // REALTIME DATA
 
       slots,
@@ -491,7 +632,8 @@ export function WebSocketProvider({
 
       lastMessage,
 
-      // NOTIFICATIONS
+
+      // ACTIONS
 
       addNotification,
 
@@ -545,7 +687,7 @@ export function WebSocketProvider({
 
 
 // ======================================================
-// HOOK
+// CUSTOM HOOK
 // ======================================================
 
 export const useWebSocket =

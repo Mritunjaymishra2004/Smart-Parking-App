@@ -14,7 +14,7 @@ import {
 } from "./context/AuthContext";
 
 import ProtectedRoute
-  from "./components/ProtectedRoute";
+from "./components/ProtectedRoute";
 
 
 // ======================================================
@@ -75,7 +75,19 @@ const Reports = lazy(() =>
   import("./pages/admin/Reports")
 );
 
+const UserManagement = lazy(() =>
+  import("./pages/admin/UserManagement")
+);
 
+
+
+const VehicleManagement = lazy(() =>
+  import("./pages/vehicles/VehicleManagement")
+);
+
+const GateScanner = lazy(() =>
+  import("./pages/gate/GateScanner")
+);
 // ======================================================
 // LOADING SCREEN
 // ======================================================
@@ -127,39 +139,22 @@ function LoadingScreen() {
 
 
 // ======================================================
-// ERROR FALLBACK
-// ======================================================
-
-function ErrorFallback() {
-
-  return (
-
-    <div className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      bg-slate-950
-      text-red-400
-      text-xl
-      font-semibold
-    ">
-
-      Something went wrong.
-
-    </div>
-  );
-}
-
-
-// ======================================================
 // DASHBOARD REDIRECT
 // ======================================================
 
 function DashboardRedirect() {
 
-  const { user } =
-    useAuth();
+  const {
+
+    user,
+
+    viewRole,
+
+  } = useAuth();
+
+  // ==============================================
+  // NOT LOGGED IN
+  // ==============================================
 
   if (!user) {
 
@@ -172,7 +167,33 @@ function DashboardRedirect() {
   }
 
   // ==============================================
-  // TEMP SAFE REDIRECT
+  // ADMIN
+  // ==============================================
+
+  const currentRole =
+
+    user?.role ||
+
+    viewRole ||
+
+    "user";
+
+  if (
+
+    currentRole === "admin"
+
+  ) {
+
+    return (
+      <Navigate
+        to="/admin"
+        replace
+      />
+    );
+  }
+
+  // ==============================================
+  // USER
   // ==============================================
 
   return (
@@ -283,14 +304,16 @@ export default function App() {
 
 
         {/* ========================================= */}
-        {/* USER */}
+        {/* USER ROUTES */}
         {/* ========================================= */}
 
         <Route
           path="/user-dashboard"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="user"
+            >
 
               <UserDashboard />
 
@@ -302,7 +325,9 @@ export default function App() {
           path="/slots"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="user"
+            >
 
               <Slots />
 
@@ -314,7 +339,9 @@ export default function App() {
           path="/book/:slotId"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="user"
+            >
 
               <BookSlot />
 
@@ -326,7 +353,9 @@ export default function App() {
           path="/my-bookings"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="user"
+            >
 
               <MyBookings />
 
@@ -348,14 +377,16 @@ export default function App() {
 
 
         {/* ========================================= */}
-        {/* ADMIN */}
+        {/* ADMIN ROUTES */}
         {/* ========================================= */}
 
         <Route
           path="/admin"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="admin"
+            >
 
               <AdminDashboard />
 
@@ -367,7 +398,9 @@ export default function App() {
           path="/admin/analytics"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="admin"
+            >
 
               <Analytics />
 
@@ -379,7 +412,9 @@ export default function App() {
           path="/admin/reports"
           element={
 
-            <ProtectedRoute>
+            <ProtectedRoute
+              role="admin"
+            >
 
               <Reports />
 
@@ -387,6 +422,38 @@ export default function App() {
           }
         />
 
+
+        <Route
+          path="/admin/users"
+          element={
+
+            <ProtectedRoute
+              role="admin"
+            >
+
+              <UserManagement />
+
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/vehicles"
+          element={
+            <ProtectedRoute>
+              <VehicleManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/gate"
+          element={
+            <ProtectedRoute role="admin">
+                <GateScanner />
+            </ProtectedRoute>
+        }
+        />
 
         {/* ========================================= */}
         {/* FALLBACK */}

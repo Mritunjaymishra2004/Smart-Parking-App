@@ -95,14 +95,29 @@ function Panel({
 
   return (
 
-    <div className="
+    <div className={`
       bg-slate-900
+
       border
       border-slate-800
+
       rounded-2xl
+
       p-5
+
       shadow-lg
-    ">
+
+      w-full
+      min-w-0
+
+      overflow-hidden
+
+      ${className}
+    `}>
+
+      {/* ========================================== */}
+      {/* HEADER */}
+      {/* ========================================== */}
 
       {title && (
 
@@ -110,6 +125,7 @@ function Panel({
           flex
           items-center
           justify-between
+
           mb-5
         ">
 
@@ -128,7 +144,19 @@ function Panel({
         </div>
       )}
 
-      {children}
+      {/* ========================================== */}
+      {/* CONTENT */}
+      {/* ========================================== */}
+
+      <div className="
+        w-full
+        min-w-0
+        overflow-hidden
+      ">
+
+        {children}
+
+      </div>
 
     </div>
   );
@@ -385,17 +413,16 @@ export default function AdminDashboard() {
   const systemHealth =
     useMemo(() => {
 
-      if (!connected) {
-
-        return "Polling";
-      }
-
       if (reconnecting) {
 
         return "Reconnecting";
       }
 
-      return "Healthy";
+      return connected
+
+        ? "Healthy"
+
+        : "Polling";
 
     }, [
 
@@ -498,21 +525,19 @@ export default function AdminDashboard() {
   // ====================================================
 
   const occupancyData =
-    useMemo(() => {
+    useMemo(() => [
 
-      return [
+      {
+        time: "Now",
 
-        {
-          time: "Now",
-          occupied:
-            stats.occupied_slots,
+        occupied:
+          stats.occupied_slots,
 
-          free:
-            stats.free_slots,
-        },
-      ];
+        free:
+          stats.free_slots,
+      },
 
-    }, [
+    ], [
 
       stats.occupied_slots,
 
@@ -603,15 +628,20 @@ export default function AdminDashboard() {
 
     <DashboardLayout>
 
+      {/* ========================================== */}
       {/* HEADER */}
+      {/* ========================================== */}
 
       <div className="
         flex
         flex-col
         xl:flex-row
+
         xl:items-center
         xl:justify-between
+
         gap-5
+
         mb-8
       ">
 
@@ -633,95 +663,16 @@ export default function AdminDashboard() {
 
             </h1>
 
-            <div className={`
-              flex
-              items-center
-              gap-2
-              px-3
-              py-1
-              rounded-full
-              text-xs
-              font-medium
-
-              ${
-                connected
-
-                  ? `
-                    bg-emerald-500/10
-                    text-emerald-400
-                  `
-
-                  : `
-                    bg-yellow-500/10
-                    text-yellow-400
-                  `
-              }
-            `}>
-
-              {
-                connected
-
-                  ? <Wifi size={14} />
-
-                  : <WifiOff size={14} />
-              }
-
-              {systemHealth}
-
-            </div>
-
           </div>
 
-          <p className="
-            text-slate-400
-            mt-2
-          ">
-
-            Realtime Smart Parking Monitoring Platform
-
-          </p>
-
         </div>
-
-        <Button
-
-          onClick={loadStats}
-
-          className="
-            bg-slate-800
-            hover:bg-slate-700
-          "
-        >
-
-          <RefreshCcw size={16} />
-
-        </Button>
 
       </div>
 
 
-      {/* ERROR */}
-
-      {pageError && (
-
-        <div className="
-          bg-red-500/10
-          border
-          border-red-500/20
-          text-red-400
-          px-4
-          py-3
-          rounded-xl
-          mb-6
-        ">
-
-          {pageError}
-
-        </div>
-      )}
-
-
+      {/* ========================================== */}
       {/* STATS */}
+      {/* ========================================== */}
 
       <div className="
         grid
@@ -739,45 +690,12 @@ export default function AdminDashboard() {
           icon={<ParkingCircle size={20} />}
         />
 
-        <StatCard
-          title="Occupied"
-          value={stats.occupied_slots || 0}
-          color="text-red-400"
-          icon={<Activity size={20} />}
-        />
-
-        <StatCard
-          title="Available"
-          value={stats.free_slots || 0}
-          color="text-emerald-400"
-          icon={<ParkingCircle size={20} />}
-        />
-
-        <StatCard
-          title="Vehicles"
-          value={stats.active_sessions || 0}
-          color="text-blue-400"
-          icon={<Car size={20} />}
-        />
-
-        <StatCard
-          title="Revenue"
-          value={`₹ ${stats.today_revenue || 0}`}
-          color="text-yellow-400"
-          icon={<IndianRupee size={20} />}
-        />
-
-        <StatCard
-          title="Occupancy"
-          value={`${occupancyPercent}%`}
-          color="text-purple-400"
-          icon={<TrendingUp size={20} />}
-        />
-
       </div>
 
 
+      {/* ========================================== */}
       {/* CHARTS */}
+      {/* ========================================== */}
 
       <Suspense
         fallback={<LoadingPanel />}
@@ -789,6 +707,9 @@ export default function AdminDashboard() {
           xl:grid-cols-2
           gap-6
           mb-8
+
+          w-full
+          min-w-0
         ">
 
           <Panel title="Revenue Analytics">
@@ -826,85 +747,6 @@ export default function AdminDashboard() {
         </div>
 
       </Suspense>
-
-
-      {/* ACTIVITY */}
-
-      <Panel
-        title="Recent Activity"
-      >
-
-        {recentActivities.length === 0 ? (
-
-          <EmptyState
-
-            title="No Activity"
-
-            description="
-              No recent activity available
-            "
-
-          />
-
-        ) : (
-
-          <div className="
-            space-y-3
-          ">
-
-            {recentActivities.map(
-              (item, index) => (
-
-                <div
-
-                  key={index}
-
-                  className="
-                    flex
-                    items-center
-                    justify-between
-
-                    bg-slate-800/50
-
-                    px-4
-                    py-3
-
-                    rounded-xl
-                  "
-                >
-
-                  <div>
-
-                    <p className="
-                      text-white
-                      text-sm
-                    ">
-
-                      {
-                        item?.message ||
-
-                        "System update"
-                      }
-
-                    </p>
-
-                  </div>
-
-                  <ShieldCheck
-                    size={16}
-                    className="
-                      text-emerald-400
-                    "
-                  />
-
-                </div>
-              )
-            )}
-
-          </div>
-        )}
-
-      </Panel>
 
     </DashboardLayout>
   );

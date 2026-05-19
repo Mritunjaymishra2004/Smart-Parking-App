@@ -2,6 +2,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
 
 import DashboardLayout
@@ -40,6 +41,8 @@ import {
 
   CircleMarker,
 
+  ZoomControl,
+
 } from "react-leaflet";
 
 import L from "leaflet";
@@ -57,6 +60,12 @@ import {
   ParkingCircle,
 
   Activity,
+
+  MapPin,
+
+  Navigation,
+
+  AlertTriangle,
 
 } from "lucide-react";
 
@@ -82,18 +91,38 @@ L.Icon.Default.mergeOptions({
 
 
 // ======================================================
+// VEHICLE ICON
+// ======================================================
+
+const vehicleIcon =
+  new L.Icon({
+
+    iconUrl:
+      "https://cdn-icons-png.flaticon.com/512/744/744465.png",
+
+    iconSize: [32, 32],
+
+    iconAnchor: [16, 16],
+
+    popupAnchor: [0, -10],
+  });
+
+
+// ======================================================
 // LIVE MAP
 // ======================================================
 
 export default function LiveMap() {
 
   // ====================================================
-  // REALTIME
+  // WEBSOCKET
   // ====================================================
 
   const {
 
     slots: realtimeSlots,
+
+    vehicles: realtimeVehicles,
 
     connected,
 
@@ -124,13 +153,17 @@ export default function LiveMap() {
     setSelectedZone] =
     useState("all");
 
+  const [lastUpdated,
+    setLastUpdated] =
+    useState(null);
+
 
   // ====================================================
   // FETCH DATA
   // ====================================================
 
   const fetchLiveData =
-    async () => {
+    useCallback(async () => {
 
       try {
 
@@ -150,11 +183,27 @@ export default function LiveMap() {
         ]);
 
         setVehicles(
-          vehiclesData
+          Array.isArray(
+            vehiclesData
+          )
+
+            ? vehiclesData
+
+            : []
         );
 
         setSlots(
-          slotsData
+          Array.isArray(
+            slotsData
+          )
+
+            ? slotsData
+
+            : []
+        );
+
+        setLastUpdated(
+          new Date()
         );
 
       } catch (err) {
@@ -165,14 +214,15 @@ export default function LiveMap() {
         );
 
         setError(
-          "Failed to load live map"
+          "Failed to load realtime map data"
         );
 
       } finally {
 
         setLoading(false);
       }
-    };
+
+    }, []);
 
 
   // ====================================================
@@ -183,11 +233,30 @@ export default function LiveMap() {
 
     fetchLiveData();
 
-  }, []);
+  }, [fetchLiveData]);
 
 
   // ====================================================
-  // REALTIME SYNC
+  // POLLING FALLBACK
+  // ====================================================
+
+  useEffect(() => {
+
+    const interval =
+      setInterval(() => {
+
+        fetchLiveData();
+
+      }, 15000);
+
+    return () =>
+      clearInterval(interval);
+
+  }, [fetchLiveData]);
+
+
+  // ====================================================
+  // REALTIME SLOT SYNC
   // ====================================================
 
   useEffect(() => {
@@ -203,9 +272,39 @@ export default function LiveMap() {
       setSlots(
         realtimeSlots
       );
+
+      setLastUpdated(
+        new Date()
+      );
     }
 
   }, [realtimeSlots]);
+
+
+  // ====================================================
+  // REALTIME VEHICLE SYNC
+  // ====================================================
+
+  useEffect(() => {
+
+    if (
+
+      realtimeVehicles &&
+
+      realtimeVehicles.length > 0
+
+    ) {
+
+      setVehicles(
+        realtimeVehicles
+      );
+
+      setLastUpdated(
+        new Date()
+      );
+    }
+
+  }, [realtimeVehicles]);
 
 
   // ====================================================
@@ -277,21 +376,23 @@ export default function LiveMap() {
   const mapCenter =
     useMemo(() => {
 
-      if (
+      const firstSlot =
+        filteredSlots.find(
 
-        filteredSlots.length > 0 &&
+          (slot) =>
 
-        filteredSlots[0].latitude
+            slot.latitude &&
 
-      ) {
+            slot.longitude
+        );
+
+      if (firstSlot) {
 
         return [
 
-          filteredSlots[0]
-            .latitude,
+          firstSlot.latitude,
 
-          filteredSlots[0]
-            .longitude,
+          firstSlot.longitude,
         ];
       }
 
@@ -309,32 +410,43 @@ export default function LiveMap() {
   // STATS
   // ====================================================
 
-  const totalVehicles =
-    vehicles.length;
+  const stats =
+    useMemo(() => {
 
-  const totalSlots =
-    slots.length;
+      return {
 
-  const occupiedSlots =
-    slots.filter(
-      (slot) =>
-        slot.status ===
-        "occupied"
-    ).length;
+        totalVehicles:
+          vehicles.length,
 
-  const availableSlots =
-    slots.filter(
-      (slot) =>
-        slot.status ===
-        "available"
-    ).length;
+        totalSlots:
+          slots.length,
 
-  const reservedSlots =
-    slots.filter(
-      (slot) =>
-        slot.status ===
-        "reserved"
-    ).length;
+        occupiedSlots:
+          slots.filter(
+            (slot) =>
+
+              slot.status ===
+              "occupied"
+          ).length,
+
+        availableSlots:
+          slots.filter(
+            (slot) =>
+
+              slot.status ===
+              "available"
+          ).length,
+
+        reservedSlots:
+          slots.filter(
+            (slot) =>
+
+              slot.status ===
+              "reserved"
+          ).length,
+      };
+
+    }, [vehicles, slots]);
 
 
   // ====================================================
@@ -383,10 +495,12 @@ export default function LiveMap() {
       <div className="
         flex
         flex-col
-        xl:flex-row
-        xl:items-center
-        xl:justify-between
-        gap-5
+        2xl:flex-row
+        2xl:items-center
+        2xl:justify-between
+
+        gap-6
+
         mb-8
       ">
 
@@ -394,8 +508,9 @@ export default function LiveMap() {
 
           <div className="
             flex
+            flex-wrap
             items-center
-            gap-3
+            gap-4
           ">
 
             <h1 className="
@@ -403,23 +518,25 @@ export default function LiveMap() {
               font-bold
               text-white
             ">
+
               Live Parking Map
+
             </h1>
 
 
-            {/* CONNECTION */}
+            {/* STATUS */}
 
             <div className={`
               flex
               items-center
               gap-2
 
-              px-3
-              py-1
+              px-4
+              py-2
 
               rounded-full
 
-              text-xs
+              text-sm
               font-medium
 
               ${
@@ -437,82 +554,124 @@ export default function LiveMap() {
               }
             `}>
 
-              {connected
+              {
 
-                ? <Wifi size={14} />
+                connected
 
-                : <WifiOff size={14} />
+                  ? <Wifi size={16} />
+
+                  : <WifiOff size={16} />
               }
 
-              {connected
+              {
 
-                ? "Realtime"
+                connected
 
-                : "Offline"
+                  ? "Realtime Connected"
+
+                  : "Offline Mode"
               }
 
             </div>
 
           </div>
 
+
           <p className="
             text-slate-400
-            mt-2
+            mt-3
           ">
-            Realtime IoT-based vehicle and parking tracking system
+
+            Realtime IoT-based vehicle and parking monitoring system
+
           </p>
+
+
+          {/* LAST UPDATE */}
+
+          {lastUpdated && (
+
+            <p className="
+              text-xs
+              text-slate-500
+              mt-2
+            ">
+
+              Last updated:
+              {" "}
+
+              {
+                lastUpdated
+                  .toLocaleTimeString()
+              }
+
+            </p>
+          )}
 
         </div>
 
 
-        {/* ====================================== */}
-        {/* ZONE FILTER */}
-        {/* ====================================== */}
+        {/* FILTER */}
 
-        <select
+        <div className="
+          flex
+          items-center
+          gap-4
+        ">
 
-          value={selectedZone}
+          <select
 
-          onChange={(e) =>
-            setSelectedZone(
-              e.target.value
-            )
-          }
+            value={selectedZone}
 
-          className="
-            bg-slate-900
-            border
-            border-slate-700
+            onChange={(e) =>
+              setSelectedZone(
+                e.target.value
+              )
+            }
 
-            text-white
+            className="
+              bg-slate-900
 
-            px-4
-            py-3
+              border
+              border-slate-700
 
-            rounded-xl
+              text-white
 
-            outline-none
-          "
-        >
+              px-4
+              py-3
 
-          {zones.map((zone) => (
+              rounded-2xl
 
-            <option
-              key={zone}
-              value={zone}
-            >
+              outline-none
 
-              {zone === "all"
+              focus:border-emerald-500/30
+            "
+          >
 
-                ? "All Zones"
+            {zones.map((zone) => (
 
-                : zone
-              }
+              <option
 
-            </option>
-          ))}
+                key={zone}
 
-        </select>
+                value={zone}
+              >
+
+                {
+
+                  zone === "all"
+
+                    ? "All Zones"
+
+                    : zone
+                }
+
+              </option>
+            ))}
+
+          </select>
+
+        </div>
 
       </div>
 
@@ -526,7 +685,9 @@ export default function LiveMap() {
         grid-cols-1
         sm:grid-cols-2
         xl:grid-cols-5
+
         gap-5
+
         mb-8
       ">
 
@@ -545,7 +706,9 @@ export default function LiveMap() {
                 text-sm
                 mb-2
               ">
+
                 Live Vehicles
+
               </p>
 
               <h2 className="
@@ -553,7 +716,11 @@ export default function LiveMap() {
                 font-bold
                 text-blue-400
               ">
-                {totalVehicles}
+
+                {
+                  stats.totalVehicles
+                }
+
               </h2>
 
             </div>
@@ -584,7 +751,9 @@ export default function LiveMap() {
                 text-sm
                 mb-2
               ">
+
                 Total Slots
+
               </p>
 
               <h2 className="
@@ -592,7 +761,11 @@ export default function LiveMap() {
                 font-bold
                 text-white
               ">
-                {totalSlots}
+
+                {
+                  stats.totalSlots
+                }
+
               </h2>
 
             </div>
@@ -623,7 +796,9 @@ export default function LiveMap() {
                 text-sm
                 mb-2
               ">
+
                 Occupied
+
               </p>
 
               <h2 className="
@@ -631,7 +806,11 @@ export default function LiveMap() {
                 font-bold
                 text-red-400
               ">
-                {occupiedSlots}
+
+                {
+                  stats.occupiedSlots
+                }
+
               </h2>
 
             </div>
@@ -663,7 +842,9 @@ export default function LiveMap() {
                 text-sm
                 mb-2
               ">
+
                 Available
+
               </p>
 
               <h2 className="
@@ -671,12 +852,16 @@ export default function LiveMap() {
                 font-bold
                 text-emerald-400
               ">
-                {availableSlots}
+
+                {
+                  stats.availableSlots
+                }
+
               </h2>
 
             </div>
 
-            <Activity
+            <MapPin
               className="
                 text-emerald-400
               "
@@ -702,7 +887,9 @@ export default function LiveMap() {
                 text-sm
                 mb-2
               ">
+
                 Reserved
+
               </p>
 
               <h2 className="
@@ -710,12 +897,16 @@ export default function LiveMap() {
                 font-bold
                 text-yellow-400
               ">
-                {reservedSlots}
+
+                {
+                  stats.reservedSlots
+                }
+
               </h2>
 
             </div>
 
-            <Activity
+            <AlertTriangle
               className="
                 text-yellow-400
               "
@@ -729,113 +920,6 @@ export default function LiveMap() {
 
 
       {/* ========================================== */}
-      {/* LEGEND */}
-      {/* ========================================== */}
-
-      <div className="
-        flex
-        flex-wrap
-        items-center
-        gap-5
-        mb-6
-      ">
-
-        <div className="
-          flex
-          items-center
-          gap-2
-        ">
-
-          <div className="
-            w-4
-            h-4
-            rounded-full
-            bg-emerald-500
-          " />
-
-          <span className="
-            text-sm
-            text-slate-300
-          ">
-            Available
-          </span>
-
-        </div>
-
-
-        <div className="
-          flex
-          items-center
-          gap-2
-        ">
-
-          <div className="
-            w-4
-            h-4
-            rounded-full
-            bg-red-500
-            animate-pulse
-          " />
-
-          <span className="
-            text-sm
-            text-slate-300
-          ">
-            Occupied
-          </span>
-
-        </div>
-
-
-        <div className="
-          flex
-          items-center
-          gap-2
-        ">
-
-          <div className="
-            w-4
-            h-4
-            rounded-full
-            bg-yellow-500
-          " />
-
-          <span className="
-            text-sm
-            text-slate-300
-          ">
-            Reserved
-          </span>
-
-        </div>
-
-
-        <div className="
-          flex
-          items-center
-          gap-2
-        ">
-
-          <div className="
-            w-4
-            h-4
-            rounded-full
-            bg-slate-500
-          " />
-
-          <span className="
-            text-sm
-            text-slate-300
-          ">
-            Blocked
-          </span>
-
-        </div>
-
-      </div>
-
-
-      {/* ========================================== */}
       {/* ERROR */}
       {/* ========================================== */}
 
@@ -843,15 +927,16 @@ export default function LiveMap() {
 
         <div className="
           bg-red-500/10
+
           border
           border-red-500/20
 
           text-red-400
 
-          px-4
-          py-3
+          px-5
+          py-4
 
-          rounded-xl
+          rounded-2xl
 
           mb-6
         ">
@@ -867,9 +952,9 @@ export default function LiveMap() {
       {/* ========================================== */}
 
       <div className="
-        h-[750px]
+        h-[780px]
 
-        rounded-2xl
+        rounded-3xl
 
         overflow-hidden
 
@@ -882,14 +967,16 @@ export default function LiveMap() {
         {loading ? (
 
           <ChartSkeleton
-            height="750px"
+            height="780px"
           />
 
         ) : filteredSlots.length === 0 ? (
 
           <div className="
             h-full
+
             bg-slate-900
+
             flex
             items-center
             justify-center
@@ -914,7 +1001,9 @@ export default function LiveMap() {
 
             center={mapCenter}
 
-            zoom={16}
+            zoom={17}
+
+            zoomControl={false}
 
             className="
               h-full
@@ -922,9 +1011,11 @@ export default function LiveMap() {
             "
           >
 
-            {/* ================================== */}
-            {/* TILE LAYER */}
-            {/* ================================== */}
+            <ZoomControl
+              position="bottomright"
+            />
+
+            {/* TILE */}
 
             <TileLayer
 
@@ -938,217 +1029,294 @@ export default function LiveMap() {
             />
 
 
-            {/* ================================== */}
             {/* VEHICLES */}
-            {/* ================================== */}
 
             {vehicles.map(
-              (vehicle) => (
+              (vehicle) => {
 
-                <Marker
+                if (
 
-                  key={vehicle.id}
+                  !vehicle.latitude ||
 
-                  position={[
+                  !vehicle.longitude
 
-                    vehicle.latitude,
+                ) {
 
-                    vehicle.longitude,
-                  ]}
-                >
+                  return null;
+                }
 
-                  <Popup>
+                return (
 
-                    <div className="
-                      min-w-[220px]
-                    ">
+                  <Marker
 
-                      <h3 className="
-                        text-lg
-                        font-bold
-                        mb-3
-                      ">
-                        Live Vehicle
-                      </h3>
+                    key={vehicle.id}
+
+                    icon={vehicleIcon}
+
+                    position={[
+
+                      vehicle.latitude,
+
+                      vehicle.longitude,
+                    ]}
+                  >
+
+                    <Popup>
 
                       <div className="
-                        space-y-2
-                        text-sm
+                        min-w-[240px]
                       ">
 
-                        <p>
+                        <div className="
+                          flex
+                          items-center
+                          gap-2
 
-                          <strong>
-                            Vehicle:
-                          </strong>
+                          mb-4
+                        ">
 
-                          {" "}
+                          <Navigation
+                            size={18}
+                            className="
+                              text-blue-500
+                            "
+                          />
 
-                          {
-                            vehicle.vehicle_number
-                          }
+                          <h3 className="
+                            text-lg
+                            font-bold
+                          ">
 
-                        </p>
+                            Live Vehicle
 
-                        <p>
+                          </h3>
 
-                          <strong>
-                            Speed:
-                          </strong>
+                        </div>
 
-                          {" "}
 
-                          {
-                            vehicle.speed
-                          }
+                        <div className="
+                          space-y-2
+                          text-sm
+                        ">
 
-                        </p>
+                          <p>
 
-                        <p>
+                            <strong>
+                              Vehicle:
+                            </strong>
 
-                          <strong>
-                            Status:
-                          </strong>
+                            {" "}
 
-                          {" "}
+                            {
+                              vehicle.vehicle_number
+                            }
 
-                          Active
+                          </p>
 
-                        </p>
+                          <p>
+
+                            <strong>
+                              Speed:
+                            </strong>
+
+                            {" "}
+
+                            {
+                              vehicle.speed || 0
+                            }
+
+                            {" "}
+                            km/h
+
+                          </p>
+
+                          <p>
+
+                            <strong>
+                              Status:
+                            </strong>
+
+                            {" "}
+
+                            Active
+
+                          </p>
+
+                          <p>
+
+                            <strong>
+                              Driver:
+                            </strong>
+
+                            {" "}
+
+                            {
+                              vehicle.owner ||
+                              "Unknown"
+                            }
+
+                          </p>
+
+                        </div>
 
                       </div>
 
-                    </div>
+                    </Popup>
 
-                  </Popup>
-
-                </Marker>
-              )
+                  </Marker>
+                );
+              }
             )}
 
 
-            {/* ================================== */}
             {/* SLOTS */}
-            {/* ================================== */}
 
             {filteredSlots.map(
-              (slot) => (
+              (slot) => {
 
-                <CircleMarker
+                if (
 
-                  key={slot.id}
+                  !slot.latitude ||
 
-                  center={[
+                  !slot.longitude
 
-                    slot.latitude,
+                ) {
 
-                    slot.longitude,
-                  ]}
+                  return null;
+                }
 
-                  radius={
-                    slot.status ===
-                    "occupied"
+                return (
 
-                      ? 12
+                  <CircleMarker
 
-                      : 10
-                  }
+                    key={slot.id}
 
-                  pathOptions={{
+                    center={[
 
-                    color:
-                      getSlotColor(
-                        slot.status
-                      ),
+                      slot.latitude,
 
-                    fillColor:
-                      getSlotColor(
-                        slot.status
-                      ),
+                      slot.longitude,
+                    ]}
 
-                    fillOpacity: 0.7,
+                    radius={
+                      slot.status ===
+                      "occupied"
 
-                    weight: 2,
-                  }}
-                >
+                        ? 13
 
-                  <Popup>
+                        : 11
+                    }
 
-                    <div className="
-                      min-w-[220px]
-                    ">
+                    pathOptions={{
 
-                      <h3 className="
-                        text-lg
-                        font-bold
-                        mb-3
-                      ">
+                      color:
+                        getSlotColor(
+                          slot.status
+                        ),
 
-                        Slot
-                        {" "}
-                        {
-                          slot.slot_number
-                        }
+                      fillColor:
+                        getSlotColor(
+                          slot.status
+                        ),
 
-                      </h3>
+                      fillOpacity: 0.75,
+
+                      weight: 2,
+                    }}
+                  >
+
+                    <Popup>
 
                       <div className="
-                        space-y-2
-                        text-sm
+                        min-w-[240px]
                       ">
 
-                        <p>
+                        <h3 className="
+                          text-lg
+                          font-bold
 
-                          <strong>
-                            Status:
-                          </strong>
+                          mb-4
+                        ">
 
+                          Slot
                           {" "}
-
                           {
-                            slot.status
+                            slot.slot_number
                           }
 
-                        </p>
+                        </h3>
 
-                        <p>
 
-                          <strong>
-                            Zone:
-                          </strong>
+                        <div className="
+                          space-y-2
+                          text-sm
+                        ">
 
-                          {" "}
+                          <p>
 
-                          {
-                            slot.zone ||
-                            "N/A"
-                          }
+                            <strong>
+                              Status:
+                            </strong>
 
-                        </p>
+                            {" "}
 
-                        <p>
+                            {
+                              slot.status
+                            }
 
-                          <strong>
-                            Type:
-                          </strong>
+                          </p>
 
-                          {" "}
+                          <p>
 
-                          {
-                            slot.slot_type ||
-                            "Standard"
-                          }
+                            <strong>
+                              Zone:
+                            </strong>
 
-                        </p>
+                            {" "}
+
+                            {
+                              slot.zone ||
+                              "N/A"
+                            }
+
+                          </p>
+
+                          <p>
+
+                            <strong>
+                              Type:
+                            </strong>
+
+                            {" "}
+
+                            {
+                              slot.slot_type ||
+                              "Standard"
+                            }
+
+                          </p>
+
+                          <p>
+
+                            <strong>
+                              Sensor:
+                            </strong>
+
+                            {" "}
+
+                            Active
+
+                          </p>
+
+                        </div>
 
                       </div>
 
-                    </div>
+                    </Popup>
 
-                  </Popup>
-
-                </CircleMarker>
-              )
+                  </CircleMarker>
+                );
+              }
             )}
 
           </MapContainer>

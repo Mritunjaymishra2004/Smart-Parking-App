@@ -47,6 +47,10 @@ let listeners = [];
 
 let isPolling = false;
 
+let isConnecting = false;
+
+let destroyed = false;
+
 let lastHeartbeat =
   Date.now();
 
@@ -87,6 +91,14 @@ const emit =
 export const subscribe =
   (callback) => {
 
+    if (
+      typeof callback !==
+      "function"
+    ) {
+
+      return () => {};
+    }
+
     listeners.push(callback);
 
     return () => {
@@ -115,7 +127,7 @@ const getToken =
 
 
 // =====================================================
-// AUTH
+// AUTH CHECK
 // =====================================================
 
 const isAuthenticated =
@@ -148,7 +160,7 @@ const setConnectionState =
 
 
 // =====================================================
-// FETCH ENDPOINT
+// SAFE FETCH
 // =====================================================
 
 const fetchEndpoint =
@@ -180,7 +192,7 @@ const fetchEndpoint =
         );
 
       // ==============================================
-      // TOKEN EXPIRED
+      // SESSION EXPIRED
       // ==============================================
 
       if (
@@ -209,12 +221,13 @@ const fetchEndpoint =
       }
 
       // ==============================================
-      // OTHER ERRORS
+      // FAILED REQUEST
       // ==============================================
 
       if (!response.ok) {
 
         throw new Error(
+
           `${eventType} failed`
         );
       }
@@ -242,6 +255,8 @@ const fetchRealtimeData =
 
     if (
 
+      destroyed ||
+
       isPolling ||
 
       !isAuthenticated()
@@ -263,8 +278,6 @@ const fetchRealtimeData =
 
         payments,
 
-        analytics,
-
       ] = await Promise.all([
 
         fetchEndpoint(
@@ -280,11 +293,6 @@ const fetchRealtimeData =
         fetchEndpoint(
           "/admin/payments/",
           "payment_update"
-        ),
-
-        fetchEndpoint(
-          "/analytics/dashboard/",
-          "analytics_update"
         ),
       ]);
 
@@ -325,18 +333,6 @@ const fetchRealtimeData =
 
           payload:
             payments,
-        });
-      }
-
-      if (analytics) {
-
-        emit({
-
-          type:
-            "analytics_update",
-
-          payload:
-            analytics,
         });
       }
 
@@ -382,7 +378,13 @@ const startHeartbeat =
     heartbeatInterval =
       setInterval(() => {
 
-        if (!isAuthenticated()) {
+        if (
+
+          destroyed ||
+
+          !isAuthenticated()
+
+        ) {
 
           disconnectWebSocket();
 
@@ -431,10 +433,18 @@ const attemptReconnect =
   () => {
 
     // ==============================================
-    // STOP IF LOGGED OUT
+    // PREVENT MULTIPLE RETRIES
     // ==============================================
 
-    if (!isAuthenticated()) {
+    if (
+
+      reconnectTimeout ||
+
+      destroyed ||
+
+      !isAuthenticated()
+
+    ) {
 
       return;
     }
@@ -495,6 +505,9 @@ const attemptReconnect =
     reconnectTimeout =
       setTimeout(() => {
 
+        reconnectTimeout =
+          null;
+
         console.log(
           `Reconnect attempt ${reconnectAttempts}`
         );
@@ -536,7 +549,7 @@ const handleOffline =
 
 
 // =====================================================
-// VISIBILITY CHANGE
+// VISIBILITY
 // =====================================================
 
 const handleVisibilityChange =
@@ -562,14 +575,27 @@ export const connectWebSocket =
   () => {
 
     // ==============================================
+    // PREVENT DUPLICATE INIT
+    // ==============================================
+
+    if (
+
+      pollingInterval ||
+
+      isConnecting ||
+
+      destroyed
+
+    ) {
+
+      return;
+    }
+
+    // ==============================================
     // LOGIN CHECK
     // ==============================================
 
     if (!isAuthenticated()) {
-
-      // ============================================
-      // PREVENT LOG SPAM
-      // ============================================
 
       if (!authWarningShown) {
 
@@ -585,14 +611,9 @@ export const connectWebSocket =
 
     authWarningShown = false;
 
-    // ==============================================
-    // PREVENT DUPLICATE
-    // ==============================================
+    isConnecting = true;
 
-    if (pollingInterval) {
-
-      return;
-    }
+    destroyed = false;
 
     console.log(
       "Realtime engine started"
@@ -609,7 +630,7 @@ export const connectWebSocket =
     fetchRealtimeData();
 
     // ==============================================
-    // START POLLING
+    // POLLING
     // ==============================================
 
     pollingInterval =
@@ -626,7 +647,7 @@ export const connectWebSocket =
     startHeartbeat();
 
     // ==============================================
-    // BROWSER EVENTS
+    // EVENTS
     // ==============================================
 
     window.addEventListener(
@@ -643,6 +664,8 @@ export const connectWebSocket =
       "visibilitychange",
       handleVisibilityChange
     );
+
+    isConnecting = false;
   };
 
 
@@ -652,6 +675,8 @@ export const connectWebSocket =
 
 export const disconnectWebSocket =
   () => {
+
+    destroyed = true;
 
     if (pollingInterval) {
 
@@ -693,6 +718,8 @@ export const disconnectWebSocket =
     );
 
     reconnectAttempts = 0;
+
+    isConnecting = false;
 
     console.log(
       "Realtime engine stopped"

@@ -8,10 +8,23 @@ import {
   Wifi,
   WifiOff,
   Activity,
+  Shield,
+  UserCog,
+  Settings,
+  Building2,
+  Users,
+  Sun,
+  Moon,
+  LogOut,
+  ChevronDown,
+  User,
+  Bell,
 } from "lucide-react";
 
 import {
   useMemo,
+  memo,
+  useState,
 } from "react";
 
 import {
@@ -27,16 +40,678 @@ import {
 } from "../../context/NotificationContext";
 
 import GlobalSearch
-  from "../search/GlobalSearch";
+from "../search/GlobalSearch";
 
 import ThemeToggle
-  from "../ui/ThemeToggle";
+from "../ui/ThemeToggle";
 
 import NotificationDropdown
-  from "../notifications/NotificationDropdown";
+from "../notifications/NotificationDropdown";
 
-import ProfileDropdown
-  from "../profile/ProfileDropdown";
+
+// ======================================================
+// NAV ITEM
+// ======================================================
+
+const NavItem = memo(({
+
+  link,
+
+  active,
+
+}) => {
+
+  return (
+
+    <Link
+
+      to={link.to}
+
+      className={`
+        px-4
+        py-2
+
+        rounded-2xl
+
+        text-sm
+        font-medium
+
+        transition-all
+        duration-200
+
+        whitespace-nowrap
+
+        ${
+          active
+
+            ? `
+              text-emerald-400
+
+              bg-emerald-500/10
+
+              border
+              border-emerald-500/20
+            `
+
+            : `
+              text-slate-300
+
+              hover:text-white
+              hover:bg-slate-800/70
+            `
+        }
+      `}
+    >
+
+      {link.label}
+
+    </Link>
+  );
+});
+
+
+// ======================================================
+// STATUS BADGE
+// ======================================================
+
+const StatusBadge = memo(({
+
+  icon,
+
+  text,
+
+  color,
+
+}) => {
+
+  return (
+
+    <div className="
+      hidden
+      xl:flex
+
+      items-center
+      gap-2
+
+      px-3
+      py-2
+
+      rounded-2xl
+
+      border
+      border-slate-700
+
+      bg-slate-800/60
+    ">
+
+      <div className={color}>
+
+        {icon}
+
+      </div>
+
+      <span className="
+        text-xs
+        text-slate-300
+      ">
+
+        {text}
+
+      </span>
+
+    </div>
+  );
+});
+
+
+// ======================================================
+// PROFILE DROPDOWN
+// ======================================================
+
+function ProfileMenu({
+
+  user,
+
+  role,
+
+  logout,
+
+  navigate,
+
+}) {
+
+  const [open,
+    setOpen] =
+    useState(false);
+
+  const isAdmin =
+    role === "admin";
+
+  return (
+
+    <div className="
+      relative
+    ">
+
+      {/* BUTTON */}
+
+      <button
+
+        onClick={() =>
+          setOpen(!open)
+        }
+
+        className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2
+
+          rounded-2xl
+
+          bg-slate-800/70
+
+          border
+          border-slate-700
+
+          hover:border-emerald-500/30
+
+          transition-all
+        "
+      >
+
+        {/* AVATAR */}
+
+        <div className="
+          w-10
+          h-10
+
+          rounded-full
+
+          bg-emerald-500/20
+
+          flex
+          items-center
+          justify-center
+
+          text-emerald-400
+          font-bold
+        ">
+
+          {
+            user?.username?.[0]
+              ?.toUpperCase()
+
+            ||
+
+            "U"
+          }
+
+        </div>
+
+
+        {/* USER */}
+
+        <div className="
+          hidden
+          lg:block
+
+          text-left
+        ">
+
+          <p className="
+            text-sm
+            font-semibold
+            text-white
+          ">
+
+            {
+              user?.username
+
+              ||
+
+              "User"
+            }
+
+          </p>
+
+          <p className="
+            text-xs
+            text-slate-400
+            capitalize
+          ">
+
+            {role}
+
+          </p>
+
+        </div>
+
+        <ChevronDown
+          size={16}
+          className="
+            text-slate-400
+          "
+        />
+
+      </button>
+
+
+      {/* DROPDOWN */}
+
+      {open && (
+
+        <div className="
+          absolute
+          right-0
+          mt-3
+
+          w-80
+
+          rounded-3xl
+
+          border
+          border-slate-700
+
+          bg-slate-900
+
+          shadow-2xl
+
+          overflow-hidden
+
+          z-[9999]
+        ">
+
+          {/* HEADER */}
+
+          <div className="
+            p-5
+
+            border-b
+            border-slate-800
+          ">
+
+            <div className="
+              flex
+              items-center
+              gap-4
+            ">
+
+              <div className="
+                w-14
+                h-14
+
+                rounded-full
+
+                bg-emerald-500/20
+
+                flex
+                items-center
+                justify-center
+
+                text-2xl
+                font-bold
+
+                text-emerald-400
+              ">
+
+                {
+                  user?.username?.[0]
+                    ?.toUpperCase()
+
+                  ||
+
+                  "U"
+                }
+
+              </div>
+
+              <div>
+
+                <h3 className="
+                  text-lg
+                  font-bold
+                  text-white
+                ">
+
+                  {
+                    user?.username
+                  }
+
+                </h3>
+
+                <p className="
+                  text-sm
+                  text-slate-400
+                ">
+
+                  {
+                    user?.email
+                  }
+
+                </p>
+
+                <p className="
+                  text-xs
+                  text-emerald-400
+                  mt-1
+                  capitalize
+                ">
+
+                  {role}
+
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* MENU */}
+
+          <div className="
+            p-3
+            space-y-2
+          ">
+
+            {/* PROFILE */}
+
+            <button
+
+              onClick={() => {
+
+                navigate("/profile");
+
+                setOpen(false);
+              }}
+
+              className="
+                w-full
+
+                flex
+                items-center
+                gap-3
+
+                px-4
+                py-3
+
+                rounded-2xl
+
+                text-slate-300
+
+                hover:bg-slate-800
+                hover:text-white
+
+                transition-all
+              "
+            >
+
+              <User size={18} />
+
+              Profile
+
+            </button>
+
+
+            {/* SETTINGS */}
+
+            <button
+
+              onClick={() => {
+
+                navigate("/settings");
+
+                setOpen(false);
+              }}
+
+              className="
+                w-full
+
+                flex
+                items-center
+                gap-3
+
+                px-4
+                py-3
+
+                rounded-2xl
+
+                text-slate-300
+
+                hover:bg-slate-800
+                hover:text-white
+
+                transition-all
+              "
+            >
+
+              <Settings size={18} />
+
+              Settings
+
+            </button>
+
+
+            {/* ADMIN FEATURES */}
+
+            {isAdmin && (
+
+              <>
+
+                {/* SWITCH ACCOUNT */}
+
+                <button
+
+                  onClick={() => {
+
+                    navigate(
+                      "/admin/users"
+                    );
+
+                    setOpen(false);
+                  }}
+
+                  className="
+                    w-full
+
+                    flex
+                    items-center
+                    gap-3
+
+                    px-4
+                    py-3
+
+                    rounded-2xl
+
+                    text-slate-300
+
+                    hover:bg-slate-800
+                    hover:text-white
+
+                    transition-all
+                  "
+                >
+
+                  <Users size={18} />
+
+                  Switch User Access
+
+                </button>
+
+
+                {/* APP MANAGEMENT */}
+
+                <button
+
+                  onClick={() => {
+
+                    navigate(
+                      "/admin/settings"
+                    );
+
+                    setOpen(false);
+                  }}
+
+                  className="
+                    w-full
+
+                    flex
+                    items-center
+                    gap-3
+
+                    px-4
+                    py-3
+
+                    rounded-2xl
+
+                    text-slate-300
+
+                    hover:bg-slate-800
+                    hover:text-white
+
+                    transition-all
+                  "
+                >
+
+                  <Shield size={18} />
+
+                  Application Management
+
+                </button>
+
+
+                {/* COMPANY */}
+
+                <button
+
+                  onClick={() => {
+
+                    navigate(
+                      "/admin/company"
+                    );
+
+                    setOpen(false);
+                  }}
+
+                  className="
+                    w-full
+
+                    flex
+                    items-center
+                    gap-3
+
+                    px-4
+                    py-3
+
+                    rounded-2xl
+
+                    text-slate-300
+
+                    hover:bg-slate-800
+                    hover:text-white
+
+                    transition-all
+                  "
+                >
+
+                  <Building2 size={18} />
+
+                  Company Settings
+
+                </button>
+
+              </>
+            )}
+
+
+            {/* THEME */}
+
+            <div className="
+              flex
+              items-center
+              justify-between
+
+              px-4
+              py-3
+
+              rounded-2xl
+
+              bg-slate-800/60
+            ">
+
+              <div className="
+                flex
+                items-center
+                gap-3
+              ">
+
+                <Moon size={18} />
+
+                <span className="
+                  text-sm
+                  text-slate-300
+                ">
+
+                  Theme
+
+                </span>
+
+              </div>
+
+              <ThemeToggle />
+
+            </div>
+
+
+            {/* LOGOUT */}
+
+            <button
+
+              onClick={() => {
+
+                logout();
+
+                setOpen(false);
+              }}
+
+              className="
+                w-full
+
+                flex
+                items-center
+                gap-3
+
+                px-4
+                py-3
+
+                rounded-2xl
+
+                text-red-400
+
+                hover:bg-red-500/10
+
+                transition-all
+              "
+            >
+
+              <LogOut size={18} />
+
+              Logout
+
+            </button>
+
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
 
 
 // ======================================================
@@ -45,23 +720,30 @@ import ProfileDropdown
 
 export default function Navbar() {
 
-  // ====================================================
-  // HOOKS
-  // ====================================================
-
   const {
+
     user,
+
+    logout,
+
     viewRole = "user",
+
   } = useAuth();
 
   const {
+
     connected,
+
   } = useWebSocket();
 
   const {
+
     notifications = [],
+
     clearNotifications,
+
     markAllRead,
+
   } = useNotification();
 
   const navigate =
@@ -72,27 +754,27 @@ export default function Navbar() {
 
 
   // ====================================================
-  // ACTIVE LINK
+  // ROLE
+  // ====================================================
+
+  const role =
+
+    user?.role ||
+
+    viewRole ||
+
+    "user";
+
+
+  // ====================================================
+  // ACTIVE
   // ====================================================
 
   const isActive =
     (path) => {
 
       return location.pathname
-        .startsWith(path)
-
-        ? `
-          text-emerald-400
-          bg-emerald-500/10
-          border
-          border-emerald-500/20
-        `
-
-        : `
-          text-slate-300
-          hover:text-white
-          hover:bg-slate-800/70
-        `;
+        .startsWith(path);
     };
 
 
@@ -100,118 +782,55 @@ export default function Navbar() {
   // NAV LINKS
   // ====================================================
 
-  const userLinks = [
-
-    {
-      to: "/dashboard",
-      label: "Dashboard",
-    },
-
-    {
-      to: "/slots",
-      label: "Slots",
-    },
-
-    {
-      to: "/map",
-      label: "Live Map",
-    },
-  ];
-
-  const adminLinks = [
-
-    {
-      to: "/admin",
-      label: "Dashboard",
-    },
-
-    {
-      to: "/admin/analytics",
-      label: "Analytics",
-    },
-
-    {
-      to: "/admin/reports",
-      label: "Reports",
-    },
-
-    {
-      to: "/admin/map",
-      label: "Live Map",
-    },
-  ];
-
   const navLinks =
-    viewRole === "admin"
+    useMemo(() => {
 
-      ? adminLinks
+      if (role === "admin") {
 
-      : userLinks;
+        return [
 
+          {
+            to: "/admin",
+            label: "Dashboard",
+          },
 
-  // ====================================================
-  // SEARCH DATA
-  // ====================================================
+          {
+            to: "/admin/analytics",
+            label: "Analytics",
+          },
 
-  const searchData =
-    useMemo(() => [
+          {
+            to: "/admin/users",
+            label: "Users",
+          },
 
-      {
-        id: 1,
-        name:
-          "Admin Dashboard",
-        route:
-          "/admin",
-        type:
-          "dashboard",
-      },
+          {
+            to: "/admin/settings",
+            label: "Settings",
+          },
+        ];
+      }
 
-      {
-        id: 2,
-        name:
-          "Parking Slots",
-        route:
-          "/slots",
-        type:
-          "slots",
-      },
+      return [
 
-      {
-        id: 3,
-        name:
-          "Analytics",
-        route:
-          "/admin/analytics",
-        type:
-          "analytics",
-      },
+        {
+          to: "/user-dashboard",
+          label: "Dashboard",
+        },
 
-      {
-        id: 4,
-        name:
-          "Reports",
-        route:
-          "/admin/reports",
-        type:
-          "reports",
-      },
+        {
+          to: "/slots",
+          label: "Slots",
+        },
 
-      {
-        id: 5,
-        name:
-          "Payments",
-        route:
-          "/admin/payments",
-        type:
-          "payments",
-      },
+        {
+          to: "/my-bookings",
+          label: "Bookings",
+        },
+      ];
 
-    ], []);
+    }, [role]);
 
-
-  // ====================================================
-  // UI
-  // ====================================================
 
   return (
 
@@ -234,24 +853,16 @@ export default function Navbar() {
       text-white
 
       relative
-      z-40
+      z-[1000]
     ">
 
-      {/* ========================================== */}
       {/* LEFT */}
-      {/* ========================================== */}
 
       <div className="
         flex
         items-center
         gap-6
-
-        min-w-0
       ">
-
-        {/* ====================================== */}
-        {/* LOGO */}
-        {/* ====================================== */}
 
         <div
 
@@ -265,7 +876,6 @@ export default function Navbar() {
             gap-3
 
             cursor-pointer
-            shrink-0
           "
         >
 
@@ -273,24 +883,21 @@ export default function Navbar() {
             w-10
             h-10
 
-            rounded-xl
+            rounded-2xl
 
             bg-emerald-500
-
-            text-black
-            font-bold
 
             flex
             items-center
             justify-center
 
-            shadow-lg
+            text-black
+            font-bold
           ">
 
             P
 
           </div>
-
 
           <div className="
             hidden
@@ -301,7 +908,6 @@ export default function Navbar() {
               text-lg
               font-bold
               text-emerald-400
-              leading-none
             ">
 
               Smart Parking
@@ -311,11 +917,10 @@ export default function Navbar() {
             <p className="
               text-[11px]
               text-slate-400
-              mt-1
             ">
 
               {
-                viewRole === "admin"
+                role === "admin"
 
                   ? "Admin Control Center"
 
@@ -329,51 +934,33 @@ export default function Navbar() {
         </div>
 
 
-        {/* ====================================== */}
-        {/* NAV LINKS */}
-        {/* ====================================== */}
+        {/* NAVIGATION */}
 
         {user && (
 
           <div className="
             hidden
             xl:flex
+
             items-center
             gap-2
           ">
 
-            {navLinks.map(
-              (link) => (
+            {navLinks.map((link) => (
 
-                <Link
+              <NavItem
 
-                  key={link.to}
+                key={link.to}
 
-                  to={link.to}
+                link={link}
 
-                  className={`
-                    px-4
-                    py-2
+                active={isActive(
+                  link.to
+                )}
 
-                    rounded-xl
+              />
 
-                    text-sm
-                    font-medium
-
-                    transition-all
-                    duration-200
-
-                    ${isActive(
-                      link.to
-                    )}
-                  `}
-                >
-
-                  {link.label}
-
-                </Link>
-              )
-            )}
+            ))}
 
           </div>
         )}
@@ -381,161 +968,86 @@ export default function Navbar() {
       </div>
 
 
-      {/* ========================================== */}
       {/* RIGHT */}
-      {/* ========================================== */}
 
       <div className="
         flex
         items-center
         gap-3
-
-        min-w-0
       ">
 
-        {/* ====================================== */}
         {/* SEARCH */}
-        {/* ====================================== */}
 
         {user && (
 
           <div className="
             hidden
             lg:block
+
             w-[320px]
           ">
 
             <GlobalSearch
-              data={searchData}
+              data={[]}
             />
 
           </div>
         )}
 
 
-        {/* ====================================== */}
-        {/* REALTIME */}
-        {/* ====================================== */}
+        {/* STATUS */}
 
         {user && (
 
-          <div className="
-            hidden
-            md:flex
+          <StatusBadge
 
-            items-center
-            gap-2
-
-            px-3
-            py-2
-
-            rounded-xl
-
-            border
-            border-slate-700
-
-            bg-slate-800/60
-          ">
-
-            {
+            icon={
               connected
 
-                ? (
+                ? <Wifi size={16} />
 
-                  <Wifi
-                    size={16}
-                    className="
-                      text-emerald-400
-                    "
-                  />
-                )
-
-                : (
-
-                  <WifiOff
-                    size={16}
-                    className="
-                      text-red-400
-                    "
-                  />
-                )
+                : <WifiOff size={16} />
             }
 
-            <span className="
-              text-xs
-              text-slate-300
-            ">
+            text={
+              connected
 
-              {
-                connected
+                ? "Realtime"
 
-                  ? "Realtime"
+                : "Offline"
+            }
 
-                  : "Offline"
-              }
+            color={
+              connected
 
-            </span>
+                ? "text-emerald-400"
 
-          </div>
+                : "text-red-400"
+            }
+
+          />
         )}
 
 
-        {/* ====================================== */}
-        {/* LIVE */}
-        {/* ====================================== */}
+        {/* ANALYTICS */}
 
         {user && (
 
-          <div className="
-            hidden
-            xl:flex
+          <StatusBadge
 
-            items-center
-            gap-2
+            icon={
+              <Activity size={16} />
+            }
 
-            px-3
-            py-2
+            text="Live Analytics"
 
-            rounded-xl
+            color="text-blue-400"
 
-            border
-            border-slate-700
-
-            bg-slate-800/60
-          ">
-
-            <Activity
-              size={16}
-              className="
-                text-blue-400
-              "
-            />
-
-            <span className="
-              text-xs
-              text-slate-300
-            ">
-
-              Live Analytics
-
-            </span>
-
-          </div>
+          />
         )}
 
 
-        {/* ====================================== */}
-        {/* THEME */}
-        {/* ====================================== */}
-
-        <ThemeToggle
-          iconOnly
-        />
-
-
-        {/* ====================================== */}
         {/* NOTIFICATIONS */}
-        {/* ====================================== */}
 
         {user && (
 
@@ -557,79 +1069,46 @@ export default function Navbar() {
         )}
 
 
-        {/* ====================================== */}
         {/* PROFILE */}
-        {/* ====================================== */}
 
         {user ? (
 
-          <ProfileDropdown />
+          <ProfileMenu
+
+            user={user}
+
+            role={role}
+
+            logout={logout}
+
+            navigate={navigate}
+
+          />
 
         ) : (
 
-          <div className="
-            flex
-            items-center
-            gap-3
-          ">
+          <button
 
-            <button
+            onClick={() =>
+              navigate("/login")
+            }
 
-              onClick={() =>
-                navigate("/login")
-              }
+            className="
+              px-4
+              py-2
 
-              className="
-                px-4
-                py-2
+              rounded-2xl
 
-                rounded-xl
+              bg-emerald-500
 
-                border
-                border-emerald-500
+              text-black
+              font-medium
+            "
+          >
 
-                text-emerald-400
+            Login
 
-                hover:bg-emerald-500
-                hover:text-black
-
-                transition
-              "
-            >
-
-              Login
-
-            </button>
-
-
-            <button
-
-              onClick={() =>
-                navigate("/signup")
-              }
-
-              className="
-                px-4
-                py-2
-
-                rounded-xl
-
-                bg-emerald-500
-
-                text-black
-                font-medium
-
-                hover:bg-emerald-600
-
-                transition
-              "
-            >
-
-              Sign Up
-
-            </button>
-
-          </div>
+          </button>
         )}
 
       </div>

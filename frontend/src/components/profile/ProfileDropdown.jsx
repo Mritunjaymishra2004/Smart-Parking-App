@@ -2,6 +2,8 @@ import {
   useEffect,
   useRef,
   useState,
+  useMemo,
+  useCallback,
 } from "react";
 
 import {
@@ -9,6 +11,7 @@ import {
   LogOut,
   Settings,
   User,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -20,7 +23,77 @@ import {
 } from "../../context/AuthContext";
 
 import ThemeToggle
-from "../ui/ThemeToggle";
+  from "../ui/ThemeToggle";
+
+
+// ======================================================
+// MENU ITEM
+// ======================================================
+
+function MenuItem({
+
+  icon,
+
+  label,
+
+  onClick,
+
+  danger = false,
+
+}) {
+
+  return (
+
+    <button
+
+      onClick={onClick}
+
+      className={`
+        w-full
+
+        flex
+        items-center
+        gap-3
+
+        px-4
+        py-3
+
+        rounded-xl
+
+        transition-all
+        duration-200
+
+        ${
+          danger
+
+            ? `
+              text-red-400
+              hover:bg-red-500/10
+            `
+
+            : `
+              text-slate-300
+              hover:bg-slate-800
+              hover:text-white
+            `
+        }
+      `}
+    >
+
+      {icon}
+
+      <span className="
+        text-sm
+        font-medium
+      ">
+
+        {label}
+
+      </span>
+
+    </button>
+  );
+}
 
 
 // ======================================================
@@ -42,7 +115,14 @@ export default function ProfileDropdown() {
 
     logout,
 
+    viewRole = "user",
+
   } = useAuth();
+
+
+  // ====================================================
+  // REFS
+  // ====================================================
 
   const dropdownRef =
     useRef(null);
@@ -52,12 +132,58 @@ export default function ProfileDropdown() {
   // STATE
   // ====================================================
 
-  const [open, setOpen] =
+  const [open,
+    setOpen] =
     useState(false);
 
 
   // ====================================================
-  // CLOSE OUTSIDE
+  // USER DATA
+  // ====================================================
+
+  const displayName =
+    useMemo(() => {
+
+      return (
+
+        user?.name ||
+
+        user?.username ||
+
+        "User"
+      );
+
+    }, [user]);
+
+
+  const avatarLetter =
+    useMemo(() => {
+
+      return (
+        displayName?.[0]?.toUpperCase()
+
+        ||
+
+        "U"
+      );
+
+    }, [displayName]);
+
+
+  // ====================================================
+  // CLOSE DROPDOWN
+  // ====================================================
+
+  const closeDropdown =
+    useCallback(() => {
+
+      setOpen(false);
+
+    }, []);
+
+
+  // ====================================================
+  // OUTSIDE CLICK + ESCAPE
   // ====================================================
 
   useEffect(() => {
@@ -75,13 +201,31 @@ export default function ProfileDropdown() {
 
         ) {
 
-          setOpen(false);
+          closeDropdown();
         }
       };
+
+
+    const handleEscape =
+      (event) => {
+
+        if (
+          event.key === "Escape"
+        ) {
+
+          closeDropdown();
+        }
+      };
+
 
     document.addEventListener(
       "mousedown",
       handleClickOutside
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
     );
 
     return () => {
@@ -90,9 +234,33 @@ export default function ProfileDropdown() {
         "mousedown",
         handleClickOutside
       );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
 
-  }, []);
+  }, [closeDropdown]);
+
+
+  // ====================================================
+  // NAVIGATION
+  // ====================================================
+
+  const navigateTo =
+    useCallback((path) => {
+
+      navigate(path);
+
+      closeDropdown();
+
+    }, [
+
+      navigate,
+
+      closeDropdown,
+    ]);
 
 
   // ====================================================
@@ -100,37 +268,46 @@ export default function ProfileDropdown() {
   // ====================================================
 
   const handleLogout =
+    useCallback(async () => {
+
+      try {
+
+        await logout();
+
+      } catch (error) {
+
+        console.error(
+          "Logout failed:",
+          error
+        );
+
+      } finally {
+
+        closeDropdown();
+
+        navigate("/login");
+      }
+
+    }, [
+
+      logout,
+
+      navigate,
+
+      closeDropdown,
+    ]);
+
+
+  // ====================================================
+  // TOGGLE
+  // ====================================================
+
+  const toggleDropdown =
     () => {
 
-      logout();
-
-      navigate("/login");
-    };
-
-
-  // ====================================================
-  // PROFILE NAVIGATION
-  // ====================================================
-
-  const goToProfile =
-    () => {
-
-      navigate("/profile");
-
-      setOpen(false);
-    };
-
-
-  // ====================================================
-  // SETTINGS NAVIGATION
-  // ====================================================
-
-  const goToSettings =
-    () => {
-
-      navigate("/admin/settings");
-
-      setOpen(false);
+      setOpen(
+        (prev) => !prev
+      );
     };
 
 
@@ -141,9 +318,12 @@ export default function ProfileDropdown() {
   return (
 
     <div
+
       ref={dropdownRef}
+
       className="
         relative
+        z-[9999]
       "
     >
 
@@ -153,9 +333,7 @@ export default function ProfileDropdown() {
 
       <button
 
-        onClick={() =>
-          setOpen(!open)
-        }
+        onClick={toggleDropdown}
 
         className="
           flex
@@ -165,15 +343,17 @@ export default function ProfileDropdown() {
           px-3
           py-2
 
-          rounded-xl
+          rounded-2xl
 
           border
           border-slate-700
 
           bg-slate-900/80
+
           hover:bg-slate-800
 
           transition-all
+          duration-200
         "
       >
 
@@ -193,18 +373,21 @@ export default function ProfileDropdown() {
 
           text-emerald-400
           font-bold
+
+          shrink-0
         ">
 
-          {user?.name?.[0] || "U"}
+          {avatarLetter}
 
         </div>
 
 
-        {/* INFO */}
+        {/* USER */}
 
         <div className="
           hidden
           md:block
+
           text-left
         ">
 
@@ -212,19 +395,24 @@ export default function ProfileDropdown() {
             text-sm
             font-medium
             text-white
+
+            leading-none
           ">
 
-            {user?.name || "User"}
+            {displayName}
 
           </p>
 
           <p className="
             text-xs
             text-slate-400
+
             capitalize
+
+            mt-1
           ">
 
-            {user?.role || "user"}
+            {viewRole}
 
           </p>
 
@@ -234,10 +422,23 @@ export default function ProfileDropdown() {
         {/* ICON */}
 
         <ChevronDown
+
           size={16}
-          className="
+
+          className={`
             text-slate-400
-          "
+
+            transition-transform
+            duration-200
+
+            ${
+              open
+
+                ? "rotate-180"
+
+                : ""
+            }
+          `}
         />
 
       </button>
@@ -252,9 +453,11 @@ export default function ProfileDropdown() {
         <div className="
           absolute
           right-0
-          mt-3
+          top-16
 
-          w-[280px]
+          w-[300px]
+
+          rounded-2xl
 
           bg-slate-900/95
           backdrop-blur-xl
@@ -262,13 +465,13 @@ export default function ProfileDropdown() {
           border
           border-slate-800
 
-          rounded-2xl
-
           shadow-2xl
 
           overflow-hidden
 
-          z-50
+          animate-fadeIn
+
+          z-[9999]
         ">
 
           {/* ====================================== */}
@@ -289,6 +492,8 @@ export default function ProfileDropdown() {
               gap-4
             ">
 
+              {/* AVATAR */}
+
               <div className="
                 w-14
                 h-14
@@ -307,30 +512,69 @@ export default function ProfileDropdown() {
                 text-emerald-400
               ">
 
-                {user?.name?.[0] || "U"}
+                {avatarLetter}
 
               </div>
 
 
-              <div>
+              {/* INFO */}
+
+              <div className="
+                min-w-0
+              ">
 
                 <h3 className="
                   font-semibold
                   text-white
+
+                  truncate
                 ">
 
-                  {user?.name || "User"}
+                  {displayName}
 
                 </h3>
 
                 <p className="
                   text-sm
                   text-slate-400
+
+                  truncate
                 ">
 
                   {user?.email}
 
                 </p>
+
+
+                {/* ROLE */}
+
+                <div className="
+                  mt-2
+
+                  inline-flex
+                  items-center
+                  gap-2
+
+                  px-2
+                  py-1
+
+                  rounded-lg
+
+                  bg-emerald-500/10
+
+                  text-emerald-400
+
+                  text-xs
+                  font-medium
+                ">
+
+                  <ShieldCheck
+                    size={12}
+                  />
+
+                  {viewRole}
+
+                </div>
 
               </div>
 
@@ -348,74 +592,40 @@ export default function ProfileDropdown() {
             space-y-2
           ">
 
-            {/* PROFILE */}
+            <MenuItem
 
-            <button
-
-              onClick={
-                goToProfile
+              icon={
+                <User size={18} />
               }
 
-              className="
-                w-full
+              label="Profile"
 
-                flex
-                items-center
-                gap-3
-
-                px-4
-                py-3
-
-                rounded-xl
-
-                text-slate-300
-                hover:bg-slate-800
-                hover:text-white
-
-                transition-all
-              "
-            >
-
-              <User size={18} />
-
-              Profile
-
-            </button>
-
-
-            {/* SETTINGS */}
-
-            <button
-
-              onClick={
-                goToSettings
+              onClick={() =>
+                navigateTo(
+                  "/profile"
+                )
               }
 
-              className="
-                w-full
+            />
 
-                flex
-                items-center
-                gap-3
 
-                px-4
-                py-3
+            <MenuItem
 
-                rounded-xl
+              icon={
+                <Settings
+                  size={18}
+                />
+              }
 
-                text-slate-300
-                hover:bg-slate-800
-                hover:text-white
+              label="Settings"
 
-                transition-all
-              "
-            >
+              onClick={() =>
+                navigateTo(
+                  "/admin/settings"
+                )
+              }
 
-              <Settings size={18} />
-
-              Settings
-
-            </button>
+            />
 
 
             {/* THEME */}
@@ -445,39 +655,23 @@ export default function ProfileDropdown() {
             border-slate-800
           ">
 
-            <button
+            <MenuItem
+
+              icon={
+                <LogOut
+                  size={18}
+                />
+              }
+
+              label="Logout"
+
+              danger
 
               onClick={
                 handleLogout
               }
 
-              className="
-                w-full
-
-                flex
-                items-center
-                justify-center
-                gap-3
-
-                px-4
-                py-3
-
-                rounded-xl
-
-                bg-red-500/10
-                text-red-400
-
-                hover:bg-red-500/20
-
-                transition-all
-              "
-            >
-
-              <LogOut size={18} />
-
-              Logout
-
-            </button>
+            />
 
           </div>
 

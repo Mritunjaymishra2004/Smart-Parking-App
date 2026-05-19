@@ -1,6 +1,8 @@
 import {
   useState,
   useEffect,
+  useCallback,
+  useMemo,
 } from "react";
 
 import {
@@ -9,6 +11,10 @@ import {
   PanelLeftOpen,
   X,
 } from "lucide-react";
+
+import {
+  useLocation,
+} from "react-router-dom";
 
 import Navbar from "./Navbar";
 
@@ -28,7 +34,9 @@ function Loader() {
       items-center
       justify-center
 
-      min-h-[300px]
+      min-h-screen
+
+      bg-slate-950
     ">
 
       <div className="
@@ -60,7 +68,28 @@ export default function DashboardLayout({
 }) {
 
   // ====================================================
-  // SIDEBAR STATE
+  // LOCATION
+  // ====================================================
+
+  const location =
+    useLocation();
+
+
+  // ====================================================
+  // DETECT ADMIN ROUTE
+  // ====================================================
+
+  const isAdminRoute =
+    useMemo(() => {
+
+      return location.pathname
+        .startsWith("/admin");
+
+    }, [location.pathname]);
+
+
+  // ====================================================
+  // STATE
   // ====================================================
 
   const [sidebarOpen,
@@ -77,16 +106,24 @@ export default function DashboardLayout({
 
 
   // ====================================================
-  // INITIALIZE COLLAPSE
+  // INITIALIZE SIDEBAR
   // ====================================================
 
   useEffect(() => {
 
     try {
 
+      const key =
+
+        isAdminRoute
+
+          ? "admin-sidebar-collapsed"
+
+          : "user-sidebar-collapsed";
+
       const savedState =
         localStorage.getItem(
-          "sidebar-collapsed"
+          key
         );
 
       setCollapsed(
@@ -96,18 +133,18 @@ export default function DashboardLayout({
     } catch (error) {
 
       console.error(
-        "Sidebar localStorage error:",
+        "Sidebar storage error:",
         error
       );
     }
 
     setMounted(true);
 
-  }, []);
+  }, [isAdminRoute]);
 
 
   // ====================================================
-  // SAVE COLLAPSE
+  // SAVE SIDEBAR STATE
   // ====================================================
 
   useEffect(() => {
@@ -119,17 +156,23 @@ export default function DashboardLayout({
 
     try {
 
+      const key =
+
+        isAdminRoute
+
+          ? "admin-sidebar-collapsed"
+
+          : "user-sidebar-collapsed";
+
       localStorage.setItem(
-
-        "sidebar-collapsed",
-
+        key,
         collapsed
       );
 
     } catch (error) {
 
       console.error(
-        "Sidebar save error:",
+        "Sidebar save failed:",
         error
       );
     }
@@ -139,11 +182,13 @@ export default function DashboardLayout({
     collapsed,
 
     mounted,
+
+    isAdminRoute,
   ]);
 
 
   // ====================================================
-  // AUTO CLOSE MOBILE
+  // HANDLE RESIZE
   // ====================================================
 
   useEffect(() => {
@@ -183,16 +228,13 @@ export default function DashboardLayout({
 
   useEffect(() => {
 
-    if (sidebarOpen) {
+    document.body.style.overflow =
 
-      document.body.style.overflow =
-        "hidden";
+      sidebarOpen
 
-    } else {
+        ? "hidden"
 
-      document.body.style.overflow =
-        "auto";
-    }
+        : "auto";
 
     return () => {
 
@@ -204,16 +246,40 @@ export default function DashboardLayout({
 
 
   // ====================================================
+  // AUTO CLOSE MOBILE SIDEBAR
+  // ====================================================
+
+  useEffect(() => {
+
+    setSidebarOpen(false);
+
+  }, [location.pathname]);
+
+
+  // ====================================================
   // TOGGLE SIDEBAR
   // ====================================================
 
   const toggleCollapse =
-    () => {
+    useCallback(() => {
 
       setCollapsed(
         (prev) => !prev
       );
-    };
+
+    }, []);
+
+
+  // ====================================================
+  // SIDEBAR WIDTH
+  // ====================================================
+
+  const sidebarWidth =
+    collapsed
+
+      ? "lg:w-24"
+
+      : "lg:w-72";
 
 
   // ====================================================
@@ -241,16 +307,19 @@ export default function DashboardLayout({
       to-slate-950
 
       text-white
+
+      overflow-hidden
     ">
 
       {/* ========================================== */}
-      {/* TOP NAVBAR */}
+      {/* NAVBAR */}
       {/* ========================================== */}
 
       <header className="
         sticky
         top-0
-        z-40
+
+        z-[1000]
 
         backdrop-blur-xl
         bg-slate-900/70
@@ -328,6 +397,7 @@ export default function DashboardLayout({
             >
 
               {
+
                 collapsed
 
                   ? (
@@ -367,12 +437,16 @@ export default function DashboardLayout({
 
 
       {/* ========================================== */}
-      {/* MAIN BODY */}
+      {/* BODY */}
       {/* ========================================== */}
 
       <div className="
         flex
         relative
+
+        min-h-[calc(100vh-64px)]
+
+        overflow-hidden
       ">
 
         {/* ====================================== */}
@@ -422,13 +496,7 @@ export default function DashboardLayout({
           duration-300
           ease-in-out
 
-          ${
-            collapsed
-
-              ? "lg:w-24"
-
-              : "lg:w-72"
-          }
+          ${sidebarWidth}
 
           ${
             sidebarOpen
@@ -454,7 +522,8 @@ export default function DashboardLayout({
             absolute
             top-0
             right-0
-            z-50
+
+            z-[60]
           ">
 
             <button
@@ -485,6 +554,8 @@ export default function DashboardLayout({
           <Sidebar
 
             collapsed={collapsed}
+
+            isAdmin={isAdminRoute}
 
             closeSidebar={() =>
               setSidebarOpen(false)
@@ -524,6 +595,9 @@ export default function DashboardLayout({
               space-y-6
 
               animate-fadeIn
+
+              w-full
+              min-w-0
             ">
 
               {children}

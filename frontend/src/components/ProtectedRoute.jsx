@@ -11,12 +11,16 @@ import {
   useAuth,
 } from "../context/AuthContext";
 
+import {
+  memo,
+} from "react";
+
 
 // ======================================================
 // LOADING SCREEN
 // ======================================================
 
-function LoadingScreen() {
+const LoadingScreen = memo(() => {
 
   return (
 
@@ -64,14 +68,14 @@ function LoadingScreen() {
 
     </div>
   );
-}
+});
 
 
 // ======================================================
-// UNAUTHORIZED
+// UNAUTHORIZED SCREEN
 // ======================================================
 
-function UnauthorizedScreen() {
+const UnauthorizedScreen = memo(() => {
 
   return (
 
@@ -89,6 +93,10 @@ function UnauthorizedScreen() {
       px-6
       text-center
     ">
+
+      {/* ========================================== */}
+      {/* ICON */}
+      {/* ========================================== */}
 
       <div className="
         w-20
@@ -114,6 +122,10 @@ function UnauthorizedScreen() {
 
       </div>
 
+      {/* ========================================== */}
+      {/* TITLE */}
+      {/* ========================================== */}
+
       <h1 className="
         text-5xl
         font-bold
@@ -123,6 +135,10 @@ function UnauthorizedScreen() {
         403
 
       </h1>
+
+      {/* ========================================== */}
+      {/* MESSAGE */}
+      {/* ========================================== */}
 
       <p className="
         text-slate-300
@@ -137,7 +153,7 @@ function UnauthorizedScreen() {
 
     </div>
   );
-}
+});
 
 
 // ======================================================
@@ -148,7 +164,7 @@ export default function ProtectedRoute({
 
   children,
 
-  role,
+  role = null,
 
 }) {
 
@@ -171,7 +187,7 @@ export default function ProtectedRoute({
 
 
   // ====================================================
-  // LOADING
+  // LOADING STATE
   // ====================================================
 
   if (loading) {
@@ -181,7 +197,7 @@ export default function ProtectedRoute({
 
 
   // ====================================================
-  // NOT LOGGED IN
+  // NOT AUTHENTICATED
   // ====================================================
 
   if (!user) {
@@ -195,7 +211,7 @@ export default function ProtectedRoute({
         replace
 
         state={{
-          from: location,
+          from: location.pathname,
         }}
       />
     );
@@ -203,7 +219,7 @@ export default function ProtectedRoute({
 
 
   // ====================================================
-  // ROLE CHECK
+  // ROLE-BASED ACCESS
   // ====================================================
 
   if (role) {
@@ -216,8 +232,9 @@ export default function ProtectedRoute({
 
         : [role];
 
+
     // ==============================================
-    // SAFE ROLE CHECK
+    // ACCESS DENIED
     // ==============================================
 
     if (
@@ -228,9 +245,7 @@ export default function ProtectedRoute({
 
     ) {
 
-      return (
-        <UnauthorizedScreen />
-      );
+      return <UnauthorizedScreen />;
     }
   }
 
