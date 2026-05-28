@@ -13,7 +13,7 @@ import {
 
 import {
   useWebSocket,
-} from "../../websocket/WebSocketContext";
+} from "../../context/WebSocketContext";
 
 // ======================================================
 // VEHICLE CARD

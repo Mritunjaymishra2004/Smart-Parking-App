@@ -1,763 +1,246 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
-  useCallback,
 } from "react";
 
 import api from "../api/axios";
-
-import {
-  connectWebSocket,
-  disconnectWebSocket,
-} from "../websocket/websocketService";
-
-
-// ======================================================
-// CONTEXT
-// ======================================================
-
-const AuthContext =
-  createContext(null);
-
-
-// ======================================================
-// TOKEN KEYS
-// ======================================================
-
-const TOKEN_KEYS = {
-
-  access: "access",
-
-  refresh: "refresh",
-
-  role: "viewRole",
-};
 
 
 // ======================================================
 // TOKEN HELPERS
 // ======================================================
 
-const getAccessToken =
-  () => {
+const TOKEN_KEYS = {
+  access: "access",
+  refresh: "refresh",
+};
 
-    return localStorage.getItem(
-      TOKEN_KEYS.access
-    );
-  };
-
-
-const getRefreshToken =
-  () => {
-
-    return localStorage.getItem(
-      TOKEN_KEYS.refresh
-    );
-  };
-
-
-const getStoredRole =
-  () => {
-
-    return (
-
-      localStorage.getItem(
-        TOKEN_KEYS.role
-      )
-
-      ||
-
-      "user"
-    );
-  };
-
-
-const setTokens =
-  (
-    access,
-    refresh
-  ) => {
-
-    localStorage.setItem(
-      TOKEN_KEYS.access,
-      access
-    );
-
-    localStorage.setItem(
-      TOKEN_KEYS.refresh,
-      refresh
-    );
-  };
-
-
-const clearTokens =
-  () => {
-
-    localStorage.removeItem(
-      TOKEN_KEYS.access
-    );
-
-    localStorage.removeItem(
-      TOKEN_KEYS.refresh
-    );
-
-    localStorage.removeItem(
-      TOKEN_KEYS.role
-    );
-  };
+const AuthContext =
+  createContext(null);
 
 
 // ======================================================
 // PROVIDER
 // ======================================================
 
-export const AuthProvider = ({
+export function AuthProvider({
   children,
-}) => {
-
-  // ====================================================
-  // STATE
-  // ====================================================
-
-  const [user,
-    setUser] =
+}) {
+  const [user, setUser] =
     useState(null);
 
-  const [viewRole,
-    setViewRoleState] =
-    useState(
-      getStoredRole()
-    );
-
-  const [loading,
-    setLoading] =
+  const [loading, setLoading] =
     useState(true);
 
-  const [authError,
-    setAuthError] =
-    useState("");
-
-  const [initialized,
-    setInitialized] =
+  const [initialized, setInitialized] =
     useState(false);
 
 
-  // ====================================================
-  // REFS
-  // ====================================================
-
-  const mounted =
-    useRef(false);
-
-  const loadingUser =
-    useRef(false);
-
-  const refreshingToken =
-    useRef(false);
-
-
-  // ====================================================
-  // SAFE STATE UPDATE
-  // ====================================================
-
-  const safeSetState =
-    useCallback((setter, value) => {
-
-      if (
-        mounted.current
-      ) {
-
-        setter(value);
+  // APPLY TOKEN
+  const applyToken =
+    useCallback((token) => {
+      if (token) {
+        api.defaults.headers.common.Authorization =
+          `Bearer ${token}`;
+      } else {
+        delete api.defaults.headers.common.Authorization;
       }
-
     }, []);
 
 
-  // ====================================================
-  // SOCKET CONNECT
-  // ====================================================
-
-  const startRealtime =
+  // CLEAR
+  const clearAuth =
     useCallback(() => {
+      localStorage.removeItem("access");
+      localStorage.removeItem("refresh");
+      localStorage.removeItem("user");
 
-      connectWebSocket();
-
-    }, []);
-
-
-  // ====================================================
-  // SOCKET DISCONNECT
-  // ====================================================
-
-  const stopRealtime =
-    useCallback(() => {
-
-      disconnectWebSocket();
-
-    }, []);
+      applyToken(null);
+      setUser(null);
+    }, [applyToken]);
 
 
-  // ====================================================
-  // CLEANUP
-  // ====================================================
-
-  const performLogoutCleanup =
-    useCallback(() => {
-
-      clearTokens();
-
-      stopRealtime();
-
-      safeSetState(
-        setUser,
-        null
-      );
-
-      safeSetState(
-        setViewRoleState,
-        "user"
-      );
-
-    }, [
-
-      stopRealtime,
-
-      safeSetState,
-    ]);
-
-
-  // ====================================================
-  // REFRESH TOKEN
-  // ====================================================
-
-  const refreshAccessToken =
-    useCallback(async () => {
-
-      if (
-        refreshingToken.current
-      ) {
-
-        return null;
-      }
-
-      try {
-
-        refreshingToken.current =
-          true;
-
-        const refresh =
-          getRefreshToken();
-
-        if (!refresh) {
-
-          throw new Error(
-            "Missing refresh token"
-          );
-        }
-
-        const response =
-          await api.post(
-            "/auth/refresh/",
-            {
-              refresh,
-            }
-          );
-
-        const newAccess =
-          response.data.access;
-
-        localStorage.setItem(
-          TOKEN_KEYS.access,
-          newAccess
-        );
-
-        return newAccess;
-
-      } catch (error) {
-
-        console.error(
-          "Token refresh failed:",
-          error
-        );
-
-        performLogoutCleanup();
-
-        throw error;
-
-      } finally {
-
-        refreshingToken.current =
-          false;
-      }
-
-    }, [performLogoutCleanup]);
-
-
-  // ====================================================
   // LOAD USER
-  // ====================================================
-
   const loadUser =
     useCallback(async () => {
-
-      if (
-        loadingUser.current
-      ) {
-
-        return;
-      }
-
       try {
-
-        loadingUser.current =
-          true;
-
-        safeSetState(
-          setAuthError,
-          ""
-        );
-
         const token =
-          getAccessToken();
-
-        // ==============================================
-        // NO TOKEN
-        // ==============================================
-
-        if (!token) {
-
-          safeSetState(
-            setUser,
-            null
+          localStorage.getItem(
+            TOKEN_KEYS.access
           );
 
+        if (!token) {
+          setLoading(false);
+          setInitialized(true);
           return;
         }
 
-        // ==============================================
-        // FETCH USER
-        // ==============================================
+        applyToken(token);
 
-        const response =
+        const res =
           await api.get(
             "/auth/me/"
           );
 
-        const userData =
-          response.data;
+        setUser(res.data);
 
-        safeSetState(
-          setUser,
-          userData
-        );
-
-        // ==============================================
-        // ROLE
-        // ==============================================
-
-        const role =
-
-          userData.role ||
-
-          "user";
-
-        safeSetState(
-          setViewRoleState,
-          role
-        );
-
-        localStorage.setItem(
-          TOKEN_KEYS.role,
-          role
-        );
-
-        // ==============================================
-        // START REALTIME
-        // ==============================================
-
-        startRealtime();
-
-      } catch (error) {
-
-        console.error(
-          "Load user failed:",
-          error
-        );
-
-        // ==============================================
-        // TRY REFRESH
-        // ==============================================
-
-        try {
-
-          await refreshAccessToken();
-
-          const retry =
-            await api.get(
-              "/auth/me/"
-            );
-
-          const retryUser =
-            retry.data;
-
-          safeSetState(
-            setUser,
-            retryUser
-          );
-
-          const role =
-
-            retryUser.role ||
-
-            "user";
-
-          safeSetState(
-            setViewRoleState,
-            role
-          );
-
-          localStorage.setItem(
-            TOKEN_KEYS.role,
-            role
-          );
-
-          startRealtime();
-
-        } catch {
-
-          performLogoutCleanup();
-
-          safeSetState(
-            setAuthError,
-            "Session expired"
-          );
-        }
+      } catch {
+        clearAuth();
 
       } finally {
-
-        loadingUser.current =
-          false;
-
-        safeSetState(
-          setLoading,
-          false
-        );
-
-        safeSetState(
-          setInitialized,
-          true
-        );
+        setLoading(false);
+        setInitialized(true);
       }
-
     }, [
-
-      refreshAccessToken,
-
-      performLogoutCleanup,
-
-      startRealtime,
-
-      safeSetState,
+      applyToken,
+      clearAuth,
     ]);
 
 
-  // ====================================================
-  // INIT
-  // ====================================================
-
   useEffect(() => {
-
-    mounted.current = true;
-
     loadUser();
-
-    return () => {
-
-      mounted.current =
-        false;
-
-      stopRealtime();
-    };
-
-  }, [
-
-    loadUser,
-
-    stopRealtime,
-  ]);
+  }, [loadUser]);
 
 
-  // ====================================================
+  // ======================================================
   // LOGIN
-  // ====================================================
+  // ======================================================
 
   const login =
     useCallback(async (
-
       email,
       password
-
     ) => {
-
-      try {
-
-        safeSetState(
-          setAuthError,
-          ""
-        );
-
-        const response =
-          await api.post(
-            "/auth/login/",
-            {
-              email,
-              password,
-            }
-          );
-
-        setTokens(
-
-          response.data.access,
-
-          response.data.refresh
-        );
-
-        await loadUser();
-
-        return {
-
-          success: true,
-        };
-
-      } catch (error) {
-
-        console.error(
-          "Login failed:",
-          error
-        );
-
-        safeSetState(
-
-          setAuthError,
-
-          error?.response?.data
-            ?.detail
-
-          ||
-
-          "Login failed"
-        );
-
-        return {
-
-          success: false,
-
-          error,
-        };
-      }
-
-    }, [
-
-      loadUser,
-
-      safeSetState,
-    ]);
-
-
-  // ====================================================
-  // SIGNUP
-  // ====================================================
-
-  const signup =
-    useCallback(async (
-
-      email,
-      password,
-      name
-
-    ) => {
-
-      try {
-
-        safeSetState(
-          setAuthError,
-          ""
-        );
-
+      const res =
         await api.post(
-          "/auth/signup/",
+          "/auth/login/",
           {
             email,
             password,
-            name,
-            role: "user",
           }
         );
 
-        return await login(
-          email,
-          password
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Signup failed:",
-          error
-        );
-
-        safeSetState(
-
-          setAuthError,
-
-          error?.response?.data
-            ?.detail
-
-          ||
-
-          "Signup failed"
-        );
-
-        return {
-
-          success: false,
-
-          error,
-        };
-      }
-
-    }, [
-
-      login,
-
-      safeSetState,
-    ]);
-
-
-  // ====================================================
-  // LOGOUT
-  // ====================================================
-
-  const logout =
-    useCallback(() => {
-
-      performLogoutCleanup();
-
-    }, [performLogoutCleanup]);
-
-
-  // ====================================================
-  // SWITCH ROLE
-  // ====================================================
-
-  const switchRole =
-    useCallback((role) => {
-
-      setViewRoleState(role);
+      const {
+        access,
+        refresh,
+        user,
+      } = res.data;
 
       localStorage.setItem(
-        TOKEN_KEYS.role,
-        role
+        "access",
+        access
       );
 
-    }, []);
+      localStorage.setItem(
+        "refresh",
+        refresh
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(user)
+      );
+
+      applyToken(access);
+
+      setUser(user);
+
+      return user;
+    }, [applyToken]);
 
 
-  // ====================================================
-  // CONTEXT VALUE
-  // ====================================================
+  // SIGNUP
+  const signup =
+    useCallback(async (
+      email,
+      password,
+      name,
+      role = "user"
+    ) => {
+      await api.post(
+        "/auth/signup/",
+        {
+          email,
+          password,
+          name,
+          role,
+        }
+      );
+
+      return await login(
+        email,
+        password
+      );
+    }, [login]);
+
+
+  // LOGOUT
+  const logout =
+    useCallback(() => {
+      clearAuth();
+      window.location.href =
+        "/login";
+    }, [clearAuth]);
+
 
   const value =
     useMemo(() => ({
-
       user,
-
+      setUser,
       loading,
-
       initialized,
 
-      authError,
-
       login,
-
       signup,
-
       logout,
-
-      viewRole,
-
-      switchRole,
-
-      refreshUser:
-        loadUser,
+      loadUser,
 
       isAuthenticated:
         !!user,
 
+      isAdmin:
+        user?.role ===
+        "admin",
     }), [
-
       user,
-
       loading,
-
       initialized,
-
-      authError,
-
       login,
-
       signup,
-
       logout,
-
-      viewRole,
-
-      switchRole,
-
       loadUser,
     ]);
 
 
-  // ====================================================
-  // PROVIDER
-  // ====================================================
-
   return (
-
     <AuthContext.Provider
       value={value}
     >
-
       {children}
-
     </AuthContext.Provider>
   );
-};
+}
 
 
 // ======================================================
-// CUSTOM HOOK
+// HOOK
 // ======================================================
 
-export const useAuth =
-  () => {
+export function useAuth() {
+  const context =
+    useContext(
+      AuthContext
+    );
 
-    const context =
-      useContext(
-        AuthContext
-      );
+  if (!context) {
+    throw new Error(
+      "useAuth must be used inside AuthProvider"
+    );
+  }
 
-    if (!context) {
-
-      throw new Error(
-
-        "useAuth must be used within AuthProvider"
-      );
-    }
-
-    return context;
-  };
+  return context;
+}

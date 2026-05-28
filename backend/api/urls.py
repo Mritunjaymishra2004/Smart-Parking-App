@@ -1,5 +1,4 @@
 from django.urls import path
-
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
@@ -35,6 +34,13 @@ urlpatterns = [
         "v1/auth/refresh/",
         TokenRefreshView.as_view(),
         name="token_refresh",
+    ),
+
+    # GOOGLE AUTH
+    path(
+        "v1/auth/google/",
+        views.google_login,
+        name="google_login",
     ),
 
     # =====================================================
@@ -92,7 +98,7 @@ urlpatterns = [
     ),
 
     # =====================================================
-    # RESERVATIONS / BOOKINGS
+    # BOOKINGS
     # =====================================================
 
     path(
@@ -114,38 +120,6 @@ urlpatterns = [
     ),
 
     # =====================================================
-    # ADMIN BOOKINGS
-    # =====================================================
-
-    path(
-        "v1/admin/bookings/",
-        views.admin_bookings,
-        name="admin_bookings",
-    ),
-
-    # =====================================================
-    # SESSIONS
-    # =====================================================
-
-    path(
-        "v1/sessions/",
-        views.user_sessions,
-        name="sessions",
-    ),
-
-    path(
-        "v1/sessions/enter/",
-        views.vehicle_entry,
-        name="vehicle_entry",
-    ),
-
-    path(
-        "v1/sessions/exit/",
-        views.vehicle_exit,
-        name="vehicle_exit",
-    ),
-
-    # =====================================================
     # PAYMENTS
     # =====================================================
 
@@ -153,12 +127,6 @@ urlpatterns = [
         "v1/payments/",
         views.pay,
         name="payments",
-    ),
-
-    path(
-        "v1/admin/payments/",
-        views.admin_payments,
-        name="admin_payments",
     ),
 
     # =====================================================
@@ -172,23 +140,7 @@ urlpatterns = [
     ),
 
     # =====================================================
-    # WALLET
-    # =====================================================
-
-    path(
-        "v1/wallet/balance/",
-        views.wallet_balance,
-        name="wallet_balance",
-    ),
-
-    path(
-        "v1/wallet/add/",
-        views.add_money,
-        name="wallet_add",
-    ),
-
-    # =====================================================
-    # ADMIN DASHBOARD
+    # ADMIN
     # =====================================================
 
     path(
@@ -210,32 +162,8 @@ urlpatterns = [
     ),
 
     path(
-        "v1/admin/free-slot/",
-        views.admin_free_slot,
-        name="admin_free_slot",
-    ),
-
-    path(
-        "v1/admin/block-slot/",
-        views.admin_block_slot,
-        name="admin_block_slot",
-    ),
-
-    path(
-        "v1/admin/live-vehicles/",
-        views.admin_live_vehicles,
-        name="admin_live_vehicles",
-    ),
-
-    path(
-        "v1/admin/wallet-users/",
-        views.admin_wallet_users,
-        name="admin_wallet_users",
-    ),
-
-    path(
-        "v1/admin/add-money/",
-        views.admin_add_money,
-        name="admin_add_money",
+        "v1/admin/bookings/",
+        views.admin_bookings,
+        name="admin_bookings",
     ),
 ]

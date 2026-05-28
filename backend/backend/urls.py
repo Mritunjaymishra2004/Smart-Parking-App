@@ -14,27 +14,83 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-# backend/urls.py
+"""
+URL configuration for backend project.
+"""
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import (
+    path,
+    include,
+)
+
 from django.http import HttpResponse
 
+
+# =====================================================
+# HOME
+# =====================================================
 
 def home(request):
     return HttpResponse(
         """
         <h1>Smart Parking System Backend Running</h1>
-        <p>API Base URL: <a href="/api/">/api/</a></p>
-        <p>Django Admin: <a href="/admin/">/admin/</a></p>
+
+        <p>
+            API Base URL:
+            <a href="/api/">
+                /api/
+            </a>
+        </p>
+
+        <p>
+            Django Admin:
+            <a href="/admin/">
+                /admin/
+            </a>
+        </p>
+
+        <p>
+            Google Login:
+            <a href="/auth/login/google-oauth2/">
+                Google OAuth
+            </a>
+        </p>
         """
     )
 
 
+# =====================================================
+# URLS
+# =====================================================
+
 urlpatterns = [
-    path("", home, name="home"),           # Root homepage
-    path("admin/", admin.site.urls),       # Django admin
-    path("api/", include("api.urls")),     # REST API
+
+    # HOME
+    path(
+        "",
+        home,
+        name="home"
+    ),
+
+    # ADMIN
+    path(
+        "admin/",
+        admin.site.urls
+    ),
+
+    # API
+    path(
+        "api/",
+        include("api.urls")
+    ),
+
+    # GOOGLE AUTH
+    path(
+        "auth/",
+        include(
+            "social_django.urls",
+            namespace="social"
+        )
+    ),
 ]
-
-

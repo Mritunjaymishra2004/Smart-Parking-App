@@ -8,19 +8,13 @@ import {
   useMemo,
 } from "react";
 
-import {
-  useNavigate,
-} from "react-router-dom";
-
 import api from "../api/axios";
 
-import {
-  useAuth,
-} from "./AuthContext";
+import { useAuth } from "./AuthContext";
+import { useWebSocket } from "./WebSocketContext";
 
-import {
-  useWebSocket,
-} from "../websocket/WebSocketContext";
+import Loader from "../shared/ui/Loader";
+
 
 // ======================================================
 // CONTEXT
@@ -29,6 +23,7 @@ import {
 const ParkingContext =
   createContext(null);
 
+
 // ======================================================
 // PROVIDER
 // ======================================================
@@ -36,11 +31,6 @@ const ParkingContext =
 export function ParkingProvider({
   children,
 }) {
-
-  // ====================================================
-  // STATE
-  // ====================================================
-
   const [session, setSession] =
     useState(null);
 
@@ -50,25 +40,14 @@ export function ParkingProvider({
   const [initialized, setInitialized] =
     useState(false);
 
-  // ====================================================
-  // HOOKS
-  // ====================================================
-
-  const navigate =
-    useNavigate();
-
   const {
     user,
     loading: authLoading,
   } = useAuth();
 
   const {
-    lastMessage,
+    messages = [],
   } = useWebSocket();
-
-  // ====================================================
-  // REFS
-  // ====================================================
 
   const sessionLoaded =
     useRef(false);
@@ -76,15 +55,31 @@ export function ParkingProvider({
   const previousUserId =
     useRef(null);
 
+
+  // ====================================================
+  // NORMALIZE SESSION
+  // ====================================================
+
+  const normalizeSession =
+    useCallback((data) => {
+      if (
+        !data ||
+        Object.keys(data).length === 0
+      ) {
+        return null;
+      }
+
+      return data;
+    }, []);
+
+
   // ====================================================
   // LOAD ACTIVE SESSION
   // ====================================================
 
   const loadSession =
     useCallback(async () => {
-
       try {
-
         setLoading(true);
 
         const response =
@@ -92,65 +87,38 @@ export function ParkingProvider({
             "/parking/active/"
           );
 
-        const data =
-          response.data;
-
         setSession(
-
-          data &&
-          Object.keys(data).length
-            ? data
-            : null
+          normalizeSession(
+            response.data
+          )
         );
 
       } catch (error) {
-
-        console.warn(
-          "No active session"
+        console.error(
+          "Session load failed:",
+          error
         );
-
-        // ==============================================
-        // AUTH EXPIRED
-        // ==============================================
-
-        if (
-          error.response?.status === 401
-        ) {
-
-          localStorage.removeItem(
-            "access"
-          );
-
-          localStorage.removeItem(
-            "refresh"
-          );
-        }
 
         setSession(null);
 
       } finally {
-
         setLoading(false);
-
         setInitialized(true);
       }
+    }, [
+      normalizeSession
+    ]);
 
-    }, []);
 
   // ====================================================
-  // INITIAL SESSION LOAD
+  // AUTH INIT
   // ====================================================
 
   useEffect(() => {
-
-    if (authLoading) return;
-
-    // ================================================
-    // USER LOGGED OUT
-    // ================================================
+    if (authLoading)
+      return;
 
     if (!user) {
-
       sessionLoaded.current =
         false;
 
@@ -158,23 +126,16 @@ export function ParkingProvider({
         null;
 
       setSession(null);
-
       setInitialized(true);
 
       return;
     }
 
-    // ================================================
-    // PREVENT DUPLICATE LOAD
-    // ================================================
-
     if (
       sessionLoaded.current &&
-
       previousUserId.current ===
-      user.id
+        user.id
     ) {
-
       return;
     }
 
@@ -192,56 +153,57 @@ export function ParkingProvider({
     loadSession,
   ]);
 
+
   // ====================================================
-  // WEBSOCKET LIVE SESSION UPDATES
+  // LIVE WEBSOCKET UPDATE
   // ====================================================
 
   useEffect(() => {
+    if (!messages.length)
+      return;
 
-    if (!lastMessage) return;
+    const latest =
+      messages[
+        messages.length - 1
+      ];
 
-    // ================================================
-    // SESSION UPDATE
-    // ================================================
+    if (!latest?.type)
+      return;
 
-    if (
-      lastMessage.type ===
-      "session_update"
-    ) {
+    switch (latest.type) {
+      case "session_update":
+        setSession(
+          normalizeSession(
+            latest.payload ||
+            latest.session
+          )
+        );
+        break;
 
-      setSession(
-        lastMessage.session
-      );
+      case "session_ended":
+        setSession(null);
+        break;
+
+      default:
+        break;
     }
 
-    // ================================================
-    // SESSION ENDED
-    // ================================================
+  }, [
+    messages,
+    normalizeSession,
+  ]);
 
-    if (
-      lastMessage.type ===
-      "session_ended"
-    ) {
-
-      setSession(null);
-    }
-
-  }, [lastMessage]);
 
   // ====================================================
   // START PARKING
   // ====================================================
 
   const startParking =
-    async (
+    useCallback(async (
       slot,
       vehicle
     ) => {
-
-      if (loading) return;
-
       try {
-
         setLoading(true);
 
         const response =
@@ -250,67 +212,48 @@ export function ParkingProvider({
             {
               slot_id:
                 slot.id,
-
               vehicle_id:
                 vehicle.id,
             }
           );
 
-        const data =
-          response.data;
+        const newSession =
+          normalizeSession(
+            response.data
+          );
 
-        // ==============================================
-        // UPDATE SESSION
-        // ==============================================
-
-        setSession(data);
-
-        // ==============================================
-        // NAVIGATE
-        // ==============================================
-
-        navigate(
-          "/navigate",
-          {
-            state: {
-              slot,
-              vehicle,
-            },
-          }
+        setSession(
+          newSession
         );
+
+        return {
+          success: true,
+          data: newSession,
+        };
 
       } catch (error) {
-
-        console.error(
-          "Start parking failed",
-          error
-        );
-
-        alert(
-
-          error?.response?.data
-            ?.message ||
-
-          "Unable to start parking"
-        );
+        return {
+          success: false,
+          error:
+            error.response?.data?.detail ||
+            "Failed to start parking",
+        };
 
       } finally {
-
         setLoading(false);
       }
-    };
+    }, [
+      normalizeSession
+    ]);
+
 
   // ====================================================
   // STOP PARKING
   // ====================================================
 
   const stopParking =
-    async () => {
-
-      if (loading) return;
-
+    useCallback(async () => {
       try {
-
         setLoading(true);
 
         const response =
@@ -318,153 +261,109 @@ export function ParkingProvider({
             "/parking/stop/"
           );
 
-        const data =
-          response.data;
-
-        // ==============================================
-        // CLEAR SESSION
-        // ==============================================
-
         setSession(null);
 
-        // ==============================================
-        // GO TO PAYMENT
-        // ==============================================
-
-        navigate(
-          `/payment?booking_id=${data.booking_id}`
-        );
+        return {
+          success: true,
+          bookingId:
+            response.data?.booking_id,
+        };
 
       } catch (error) {
-
-        console.error(
-          "Stop parking failed",
-          error
-        );
-
-        alert(
-
-          error?.response?.data
-            ?.message ||
-
-          "Failed to stop parking"
-        );
+        return {
+          success: false,
+          error:
+            error.response?.data?.detail ||
+            "Failed to stop parking",
+        };
 
       } finally {
-
         setLoading(false);
       }
-    };
+    }, []);
+
 
   // ====================================================
-  // REFRESH SESSION
+  // HELPERS
   // ====================================================
 
   const refreshSession =
-    async () => {
-
-      try {
-
-        const response =
-          await api.get(
-            "/parking/active/"
-          );
-
-        setSession(
-
-          response.data || null
-        );
-
-      } catch {
-
-        setSession(null);
-      }
-    };
-
-  // ====================================================
-  // CLEAR SESSION
-  // ====================================================
+    useCallback(() => {
+      return loadSession();
+    }, [loadSession]);
 
   const clearSession =
-    () => {
-
+    useCallback(() => {
       setSession(null);
-    };
+    }, []);
+
 
   // ====================================================
-  // MEMOIZED VALUE
+  // VALUE
   // ====================================================
 
   const value =
     useMemo(() => ({
-
       session,
-
       loading,
-
       initialized,
 
       startParking,
-
       stopParking,
-
       refreshSession,
-
       clearSession,
 
       hasActiveSession:
         !!session,
-
     }), [
       session,
       loading,
       initialized,
+      startParking,
+      stopParking,
+      refreshSession,
+      clearSession,
     ]);
 
+
   // ====================================================
-  // INITIAL LOADING
+  // INIT LOADER
   // ====================================================
 
   if (!initialized) {
-
-    return null;
+    return (
+      <Loader
+        text="Initializing Parking System..."
+      />
+    );
   }
 
-  // ====================================================
-  // PROVIDER
-  // ====================================================
 
   return (
-
     <ParkingContext.Provider
       value={value}
     >
-
       {children}
-
     </ParkingContext.Provider>
   );
 }
+
 
 // ======================================================
 // HOOK
 // ======================================================
 
-export const useParking = () => {
-
+export function useParking() {
   const context =
     useContext(
       ParkingContext
     );
 
   if (!context) {
-
     throw new Error(
       "useParking must be used inside ParkingProvider"
     );
   }
 
   return context;
-};
-
-
+}

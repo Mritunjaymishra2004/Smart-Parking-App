@@ -1,746 +1,199 @@
-// =====================================================
-// ENV CONFIG
-// =====================================================
-
-const API_BASE_URL =
-
-  import.meta.env
-    .VITE_API_BASE_URL
-
-  ||
-
-  "http://127.0.0.1:8000/api/v1";
-
-
-// =====================================================
-// CONFIG
-// =====================================================
-
-const POLLING_INTERVAL =
-  5000;
-
-const HEARTBEAT_INTERVAL =
-  30000;
-
-const MAX_RETRIES =
-  10;
-
-const MAX_BACKOFF =
-  30000;
-
-
-// =====================================================
-// INTERNAL STATE
-// =====================================================
-
-let pollingInterval = null;
-
-let heartbeatInterval = null;
-
-let reconnectTimeout = null;
-
-let reconnectAttempts = 0;
-
-let isConnected = false;
-
+let socket = null;
 let listeners = [];
+let reconnectTimer = null;
 
-let isPolling = false;
+let manuallyClosed = false;
 
-let isConnecting = false;
-
-let destroyed = false;
-
-let lastHeartbeat =
-  Date.now();
-
-let authWarningShown =
-  false;
+const WS_URL =
+  "ws://127.0.0.1:8000/ws/parking/";
 
 
-// =====================================================
-// EMIT EVENT
-// =====================================================
+// ======================================================
+// CONNECT
+// ======================================================
 
-const emit =
-  (event) => {
+export const connectWebSocket = () => {
+  const token =
+    localStorage.getItem("access");
 
-    listeners.forEach(
-      (listener) => {
-
-        try {
-
-          listener(event);
-
-        } catch (error) {
-
-          console.error(
-            "Listener error:",
-            error
-          );
-        }
-      }
+  if (!token) {
+    console.warn(
+      "No auth token found"
     );
-  };
+    return;
+  }
 
+  // Prevent duplicate connection
+  if (
+    socket &&
+    (
+      socket.readyState === WebSocket.OPEN ||
+      socket.readyState === WebSocket.CONNECTING
+    )
+  ) {
+    return;
+  }
 
-// =====================================================
-// SUBSCRIBE
-// =====================================================
+  manuallyClosed = false;
 
-export const subscribe =
-  (callback) => {
+  socket = new WebSocket(
+    `${WS_URL}?token=${token}`
+  );
 
-    if (
-      typeof callback !==
-      "function"
-    ) {
+  socket.onopen = () => {
+    console.log(
+      "WebSocket connected"
+    );
 
-      return () => {};
+    if (reconnectTimer) {
+      clearTimeout(
+        reconnectTimer
+      );
+      reconnectTimer = null;
     }
-
-    listeners.push(callback);
-
-    return () => {
-
-      listeners =
-        listeners.filter(
-          (listener) =>
-
-            listener !== callback
-        );
-    };
   };
 
-
-// =====================================================
-// TOKEN
-// =====================================================
-
-const getToken =
-  () => {
-
-    return localStorage.getItem(
-      "access"
-    );
-  };
-
-
-// =====================================================
-// AUTH CHECK
-// =====================================================
-
-const isAuthenticated =
-  () => {
-
-    return !!getToken();
-  };
-
-
-// =====================================================
-// CONNECTION STATE
-// =====================================================
-
-const setConnectionState =
-  (state) => {
-
-    isConnected = state;
-
-    emit({
-
-      type:
-
-        state
-
-          ? "connected"
-
-          : "disconnected",
-    });
-  };
-
-
-// =====================================================
-// SAFE FETCH
-// =====================================================
-
-const fetchEndpoint =
-  async (
-    endpoint,
-    eventType
-  ) => {
-
+  socket.onmessage = (event) => {
     try {
+      const data = JSON.parse(
+        event.data
+      );
 
-      const response =
-        await fetch(
-
-          `${API_BASE_URL}${endpoint}`,
-
-          {
-
-            method: "GET",
-
-            headers: {
-
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${getToken()}`,
-            },
-          }
-        );
-
-      // ==============================================
-      // SESSION EXPIRED
-      // ==============================================
-
-      if (
-
-        response.status === 401
-
-      ) {
-
-        localStorage.removeItem(
-          "access"
-        );
-
-        localStorage.removeItem(
-          "refresh"
-        );
-
-        disconnectWebSocket();
-
-        emit({
-
-          type:
-            "session_expired",
-        });
-
-        return null;
-      }
-
-      // ==============================================
-      // FAILED REQUEST
-      // ==============================================
-
-      if (!response.ok) {
-
-        throw new Error(
-
-          `${eventType} failed`
-        );
-      }
-
-      return await response.json();
+      listeners.forEach((cb) =>
+        cb(data)
+      );
 
     } catch (error) {
-
       console.error(
-        `${eventType} error:`,
+        "Invalid WebSocket message:",
         error
       );
-
-      throw error;
     }
   };
 
-
-// =====================================================
-// FETCH REALTIME DATA
-// =====================================================
-
-const fetchRealtimeData =
-  async () => {
+  socket.onclose = (event) => {
+    console.log(
+      "Disconnected:",
+      event.code
+    );
 
     if (
-
-      destroyed ||
-
-      isPolling ||
-
-      !isAuthenticated()
-
+      !manuallyClosed &&
+      event.code !== 1000
     ) {
-
-      return;
-    }
-
-    try {
-
-      isPolling = true;
-
-      const [
-
-        slots,
-
-        bookings,
-
-        payments,
-
-      ] = await Promise.all([
-
-        fetchEndpoint(
-          "/slots/",
-          "slots_update"
-        ),
-
-        fetchEndpoint(
-          "/admin/bookings/",
-          "booking_update"
-        ),
-
-        fetchEndpoint(
-          "/admin/payments/",
-          "payment_update"
-        ),
-      ]);
-
-      // ==============================================
-      // EMIT EVENTS
-      // ==============================================
-
-      if (slots) {
-
-        emit({
-
-          type:
-            "slots_update",
-
-          payload:
-            slots,
-        });
-      }
-
-      if (bookings) {
-
-        emit({
-
-          type:
-            "booking_update",
-
-          payload:
-            bookings,
-        });
-      }
-
-      if (payments) {
-
-        emit({
-
-          type:
-            "payment_update",
-
-          payload:
-            payments,
-        });
-      }
-
-      reconnectAttempts = 0;
-
-      setConnectionState(
-        true
-      );
-
-    } catch (error) {
-
-      setConnectionState(
-        false
-      );
-
-      emit({
-
-        type:
-          "connection_error",
-
-        error:
-          error.message,
-      });
-
-      attemptReconnect();
-
-    } finally {
-
-      isPolling = false;
+      reconnect();
     }
   };
 
-
-// =====================================================
-// HEARTBEAT
-// =====================================================
-
-const startHeartbeat =
-  () => {
-
-    stopHeartbeat();
-
-    heartbeatInterval =
-      setInterval(() => {
-
-        if (
-
-          destroyed ||
-
-          !isAuthenticated()
-
-        ) {
-
-          disconnectWebSocket();
-
-          return;
-        }
-
-        lastHeartbeat =
-          Date.now();
-
-        emit({
-
-          type:
-            "heartbeat",
-
-          timestamp:
-            lastHeartbeat,
-        });
-
-      }, HEARTBEAT_INTERVAL);
+  socket.onerror = (error) => {
+    console.error(
+      "WebSocket error:",
+      error
+    );
   };
+};
 
 
-// =====================================================
-// STOP HEARTBEAT
-// =====================================================
-
-const stopHeartbeat =
-  () => {
-
-    if (heartbeatInterval) {
-
-      clearInterval(
-        heartbeatInterval
-      );
-
-      heartbeatInterval = null;
-    }
-  };
-
-
-// =====================================================
+// ======================================================
 // RECONNECT
-// =====================================================
+// ======================================================
 
-const attemptReconnect =
-  () => {
+const reconnect = () => {
+  if (reconnectTimer) return;
 
-    // ==============================================
-    // PREVENT MULTIPLE RETRIES
-    // ==============================================
+  reconnectTimer =
+    setTimeout(() => {
+      reconnectTimer = null;
+      connectWebSocket();
+    }, 3000);
+};
 
-    if (
 
-      reconnectTimeout ||
-
-      destroyed ||
-
-      !isAuthenticated()
-
-    ) {
-
-      return;
-    }
-
-    // ==============================================
-    // MAX RETRIES
-    // ==============================================
-
-    if (
-
-      reconnectAttempts >=
-      MAX_RETRIES
-
-    ) {
-
-      emit({
-
-        type:
-          "reconnect_failed",
-      });
-
-      console.error(
-        "Max reconnect attempts reached"
-      );
-
-      return;
-    }
-
-    reconnectAttempts++;
-
-    const delay = Math.min(
-
-      1000 *
-
-      Math.pow(
-        2,
-        reconnectAttempts
-      )
-
-      +
-
-      Math.random() * 1000,
-
-      MAX_BACKOFF
-    );
-
-    emit({
-
-      type:
-        "reconnecting",
-
-      attempt:
-        reconnectAttempts,
-
-      delay,
-    });
-
-    reconnectTimeout =
-      setTimeout(() => {
-
-        reconnectTimeout =
-          null;
-
-        console.log(
-          `Reconnect attempt ${reconnectAttempts}`
-        );
-
-        connectWebSocket();
-
-      }, delay);
-  };
-
-
-// =====================================================
-// ONLINE
-// =====================================================
-
-const handleOnline =
-  () => {
-
-    console.log(
-      "Browser online"
-    );
-
-    connectWebSocket();
-  };
-
-
-// =====================================================
-// OFFLINE
-// =====================================================
-
-const handleOffline =
-  () => {
-
-    console.log(
-      "Browser offline"
-    );
-
-    disconnectWebSocket();
-  };
-
-
-// =====================================================
-// VISIBILITY
-// =====================================================
-
-const handleVisibilityChange =
-  () => {
-
-    if (
-
-      document.visibilityState ===
-      "visible"
-
-    ) {
-
-      fetchRealtimeData();
-    }
-  };
-
-
-// =====================================================
-// CONNECT
-// =====================================================
-
-export const connectWebSocket =
-  () => {
-
-    // ==============================================
-    // PREVENT DUPLICATE INIT
-    // ==============================================
-
-    if (
-
-      pollingInterval ||
-
-      isConnecting ||
-
-      destroyed
-
-    ) {
-
-      return;
-    }
-
-    // ==============================================
-    // LOGIN CHECK
-    // ==============================================
-
-    if (!isAuthenticated()) {
-
-      if (!authWarningShown) {
-
-        console.info(
-          "Realtime waiting for login..."
-        );
-
-        authWarningShown = true;
-      }
-
-      return;
-    }
-
-    authWarningShown = false;
-
-    isConnecting = true;
-
-    destroyed = false;
-
-    console.log(
-      "Realtime engine started"
-    );
-
-    setConnectionState(
-      true
-    );
-
-    // ==============================================
-    // INITIAL FETCH
-    // ==============================================
-
-    fetchRealtimeData();
-
-    // ==============================================
-    // POLLING
-    // ==============================================
-
-    pollingInterval =
-      setInterval(() => {
-
-        fetchRealtimeData();
-
-      }, POLLING_INTERVAL);
-
-    // ==============================================
-    // HEARTBEAT
-    // ==============================================
-
-    startHeartbeat();
-
-    // ==============================================
-    // EVENTS
-    // ==============================================
-
-    window.addEventListener(
-      "online",
-      handleOnline
-    );
-
-    window.addEventListener(
-      "offline",
-      handleOffline
-    );
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibilityChange
-    );
-
-    isConnecting = false;
-  };
-
-
-// =====================================================
+// ======================================================
 // DISCONNECT
-// =====================================================
+// ======================================================
 
-export const disconnectWebSocket =
-  () => {
+export const disconnectWebSocket = () => {
+  manuallyClosed = true;
 
-    destroyed = true;
-
-    if (pollingInterval) {
-
-      clearInterval(
-        pollingInterval
-      );
-
-      pollingInterval = null;
-    }
-
-    stopHeartbeat();
-
-    if (reconnectTimeout) {
-
-      clearTimeout(
-        reconnectTimeout
-      );
-
-      reconnectTimeout = null;
-    }
-
-    window.removeEventListener(
-      "online",
-      handleOnline
+  if (reconnectTimer) {
+    clearTimeout(
+      reconnectTimer
     );
+    reconnectTimer = null;
+  }
 
-    window.removeEventListener(
-      "offline",
-      handleOffline
-    );
-
-    document.removeEventListener(
-      "visibilitychange",
-      handleVisibilityChange
-    );
-
-    setConnectionState(
-      false
-    );
-
-    reconnectAttempts = 0;
-
-    isConnecting = false;
-
+  if (socket) {
     console.log(
-      "Realtime engine stopped"
+      "WebSocket disconnected manually"
     );
+
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onclose = null;
+    socket.onerror = null;
+
+    socket.close(1000);
+    socket = null;
+  }
+};
+
+
+// ======================================================
+// SUBSCRIBE
+// ======================================================
+
+export const subscribe = (callback) => {
+  listeners.push(callback);
+
+  return () => {
+    listeners =
+      listeners.filter(
+        (cb) =>
+          cb !== callback
+      );
   };
+};
 
 
-// =====================================================
+// ======================================================
+// SEND
+// ======================================================
+
+export const sendMessage = (data) => {
+  if (
+    socket &&
+    socket.readyState === WebSocket.OPEN
+  ) {
+    socket.send(
+      JSON.stringify(data)
+    );
+  }
+};
+
+
+// ======================================================
 // STATUS
-// =====================================================
+// ======================================================
 
-export const getConnectionStatus =
-  () => {
+export const getConnectionStatus = () => {
+  if (!socket)
+    return "DISCONNECTED";
 
-    return {
+  switch (socket.readyState) {
+    case WebSocket.CONNECTING:
+      return "CONNECTING";
 
-      connected:
-        isConnected,
+    case WebSocket.OPEN:
+      return "CONNECTED";
 
-      reconnectAttempts,
+    case WebSocket.CLOSING:
+      return "CLOSING";
 
-      lastHeartbeat,
-    };
-  };
+    case WebSocket.CLOSED:
+      return "DISCONNECTED";
+
+    default:
+      return "DISCONNECTED";
+  }
+};

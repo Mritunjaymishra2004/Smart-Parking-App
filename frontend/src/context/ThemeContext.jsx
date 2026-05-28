@@ -1,17 +1,10 @@
 import {
-
   createContext,
-
   useContext,
-
   useEffect,
-
   useMemo,
-
   useState,
-
   useCallback,
-
 } from "react";
 
 
@@ -24,7 +17,7 @@ const ThemeContext =
 
 
 // ======================================================
-// STORAGE KEY
+// STORAGE
 // ======================================================
 
 const STORAGE_KEY =
@@ -32,107 +25,55 @@ const STORAGE_KEY =
 
 
 // ======================================================
-// SAFE BROWSER CHECK
+// HELPERS
 // ======================================================
 
-const isBrowser =
-  typeof window !==
-  "undefined";
+const getStoredTheme = () => {
+  try {
+    return localStorage.getItem(
+      STORAGE_KEY
+    );
+  } catch {
+    return null;
+  }
+};
 
-
-// ======================================================
-// SAFE STORAGE GET
-// ======================================================
-
-const getStoredTheme =
-  () => {
-
-    try {
-
-      return localStorage.getItem(
-        STORAGE_KEY
-      );
-
-    } catch {
-
-      return null;
-    }
-  };
-
-
-// ======================================================
-// SAFE STORAGE SET
-// ======================================================
-
-const saveTheme =
-  (theme) => {
-
-    try {
-
-      localStorage.setItem(
-        STORAGE_KEY,
-        theme
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Failed to save theme:",
-        error
-      );
-    }
-  };
-
-
-// ======================================================
-// SYSTEM THEME
-// ======================================================
+const saveTheme = (
+  theme
+) => {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      theme
+    );
+  } catch {}
+};
 
 const getSystemTheme =
   () => {
-
-    if (!isBrowser) {
-
+    if (
+      typeof window ===
+      "undefined"
+    ) {
       return "dark";
     }
 
-    try {
-
-      return window.matchMedia(
-
-        "(prefers-color-scheme: dark)"
-
-      ).matches
-
-        ? "dark"
-
-        : "light";
-
-    } catch {
-
-      return "dark";
-    }
+    return window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches
+      ? "dark"
+      : "light";
   };
-
-
-// ======================================================
-// INITIAL THEME
-// ======================================================
 
 const getInitialTheme =
   () => {
-
     const stored =
       getStoredTheme();
 
     if (
-
       stored === "dark" ||
-
       stored === "light"
-
     ) {
-
       return stored;
     }
 
@@ -145,23 +86,14 @@ const getInitialTheme =
 // ======================================================
 
 export function ThemeProvider({
-
   children,
-
 }) {
-
-  // ====================================================
-  // STATE
-  // ====================================================
-
-  const [theme,
-    setTheme] =
+  const [theme, setTheme] =
     useState(
       getInitialTheme
     );
 
-  const [mounted,
-    setMounted] =
+  const [mounted, setMounted] =
     useState(false);
 
 
@@ -170,9 +102,7 @@ export function ThemeProvider({
   // ====================================================
 
   useEffect(() => {
-
     setMounted(true);
-
   }, []);
 
 
@@ -181,28 +111,22 @@ export function ThemeProvider({
   // ====================================================
 
   useEffect(() => {
-
-    if (!isBrowser) {
-
-      return;
-    }
-
     const root =
       document.documentElement;
 
-    // REMOVE OLD
     root.classList.remove(
       "light",
       "dark"
     );
 
-    // ADD NEW
     root.classList.add(
-      theme );
+      theme
+    );
 
-    // SAVE
+    root.style.colorScheme =
+      theme;
+
     saveTheme(theme);
-
   }, [theme]);
 
 
@@ -211,137 +135,60 @@ export function ThemeProvider({
   // ====================================================
 
   useEffect(() => {
-
-    if (!isBrowser) {
-
-      return;
-    }
-
-    const mediaQuery =
+    const media =
       window.matchMedia(
-
         "(prefers-color-scheme: dark)"
       );
 
-    const handleChange =
-      (event) => {
+    const handler = (
+      event
+    ) => {
+      const stored =
+        getStoredTheme();
 
-        const storedTheme =
-          getStoredTheme();
-
-        // ==========================================
-        // AUTO SWITCH ONLY IF
-        // USER NEVER MANUALLY CHANGED
-        // ==========================================
-
-        if (
-
-          !storedTheme ||
-
-          storedTheme ===
-          "system"
-
-        ) {
-
-          setTheme(
-
-            event.matches
-
-              ? "dark"
-
-              : "light"
-          );
-        }
-      };
-
-
-    // ==============================================
-    // LISTENER
-    // ==============================================
-
-    try {
-
-      mediaQuery.addEventListener(
-
-        "change",
-
-        handleChange
-      );
-
-    } catch {
-
-      mediaQuery.addListener(
-        handleChange
-      );
-    }
-
-
-    // ==============================================
-    // CLEANUP
-    // ==============================================
-
-    return () => {
-
-      try {
-
-        mediaQuery.removeEventListener(
-
-          "change",
-
-          handleChange
-        );
-
-      } catch {
-
-        mediaQuery.removeListener(
-          handleChange
+      if (!stored) {
+        setTheme(
+          event.matches
+            ? "dark"
+            : "light"
         );
       }
     };
 
+    media.addEventListener(
+      "change",
+      handler
+    );
+
+    return () =>
+      media.removeEventListener(
+        "change",
+        handler
+      );
   }, []);
 
 
   // ====================================================
-  // TOGGLE THEME
+  // ACTIONS
   // ====================================================
 
   const toggleTheme =
     useCallback(() => {
-
       setTheme((prev) =>
-
         prev === "dark"
-
           ? "light"
-
           : "dark"
       );
-
     }, []);
-
-
-  // ====================================================
-  // SET LIGHT
-  // ====================================================
-
-  const setLightTheme =
-    useCallback(() => {
-
-      setTheme("light");
-
-    }, []);
-
-
-  // ====================================================
-  // SET DARK
-  // ====================================================
 
   const setDarkTheme =
     useCallback(() => {
-
       setTheme("dark");
+    }, []);
 
+  const setLightTheme =
+    useCallback(() => {
+      setTheme("light");
     }, []);
 
 
@@ -351,10 +198,11 @@ export function ThemeProvider({
 
   const value =
     useMemo(() => ({
-
       theme,
-
       mounted,
+
+      darkMode:
+        theme === "dark",
 
       isDark:
         theme === "dark",
@@ -363,37 +211,22 @@ export function ThemeProvider({
         theme === "light",
 
       toggleTheme,
-
       setDarkTheme,
-
       setLightTheme,
-
     }), [
-
       theme,
-
       mounted,
-
       toggleTheme,
-
       setDarkTheme,
-
       setLightTheme,
     ]);
 
 
-  // ====================================================
-  // PROVIDER
-  // ====================================================
-
   return (
-
     <ThemeContext.Provider
       value={value}
     >
-
       {children}
-
     </ThemeContext.Provider>
   );
 }
@@ -404,41 +237,15 @@ export function ThemeProvider({
 // ======================================================
 
 export function useTheme() {
-
   const context =
     useContext(
       ThemeContext
     );
 
   if (!context) {
-
-    console.error(
-      "ThemeContext missing"
+    throw new Error(
+      "useTheme must be used inside ThemeProvider"
     );
-
-    // ==============================================
-    // SAFE FALLBACK
-    // ==============================================
-
-    return {
-
-      theme: "dark",
-
-      mounted: true,
-
-      isDark: true,
-
-      isLight: false,
-
-      toggleTheme:
-        () => {},
-
-      setDarkTheme:
-        () => {},
-
-      setLightTheme:
-        () => {},
-    };
   }
 
   return context;

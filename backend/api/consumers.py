@@ -1,153 +1,9 @@
-import json
-
-from channels.generic.websocket import AsyncWebsocketConsumer
-
-
-class ParkingConsumer(
-    AsyncWebsocketConsumer
-):
-
-    async def connect(self):
-
-        # ============================================
-        # GROUP NAME
-        # ============================================
-
-        self.parking_group = "parking_group"
-
-        # ============================================
-        # JOIN GROUP
-        # ============================================
-
-        await self.channel_layer.group_add(
-
-            self.parking_group,
-
-            self.channel_name
-        )
-
-        # ============================================
-        # ACCEPT CONNECTION
-        # ============================================
-
-        await self.accept()
-
-        print(
-            "WebSocket connected"
-        )
-
-    async def disconnect(
-        self,
-        close_code
-    ):
-
-        # ============================================
-        # LEAVE GROUP SAFELY
-        # ============================================
-
-        try:
-
-            await self.channel_layer.group_discard(
-
-                self.parking_group,
-
-                self.channel_name
-            )
-
-        except Exception as e:
-
-            print(
-                "Disconnect error:",
-                e
-            )
-
-        print(
-            "WebSocket disconnected"
-        )
-
-    async def receive(
-        self,
-        text_data
-    ):
-
-        try:
-
-            data = json.loads(
-                text_data
-            )
-
-            print(
-                "Received:",
-                data
-            )
-
-            # ========================================
-            # ECHO BACK
-            # ========================================
-
-            await self.send(
-
-                text_data=json.dumps({
-
-                    "type":
-                        "echo",
-
-                    "message":
-                        data,
-                })
-            )
-
-        except Exception as e:
-
-            print(
-                "Receive error:",
-                e
-            )
-
-    # ================================================
-    # GROUP MESSAGE HANDLER
-    # ================================================
-
-    async def parking_update(
-        self,
-        event
-    ):
-
-        await self.send(
-
-            text_data=json.dumps(
-
-                event["data"]
-            )
-        )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # import json
 
-# from channels.generic.websocket import  AsyncWebsocketConsumer
+# from channels.generic.websocket import (
+#     AsyncWebsocketConsumer
+# )
+
 
 # # =====================================================
 # # PARKING CONSUMER
@@ -164,12 +20,22 @@ class ParkingConsumer(
 #     async def connect(self):
 
 #         # =============================================
+#         # USER
+#         # =============================================
+
+#         user = self.scope.get(
+#             "user"
+#         )
+
+#         # =============================================
 #         # AUTH CHECK
 #         # =============================================
 
-#         user = self.scope.get("user")
-
-#         if not user or user.is_anonymous:
+#         if (
+#             not user
+#             or
+#             user.is_anonymous
+#         ):
 
 #             await self.close()
 
@@ -182,50 +48,70 @@ class ParkingConsumer(
 #         self.user = user
 
 #         self.is_admin = (
+
 #             user.is_staff
-#             or user.is_superuser
+
+#             or
+
+#             user.is_superuser
 #         )
 
 #         # =============================================
 #         # GROUPS
 #         # =============================================
 
-#         self.parking_group = "parking"
+#         self.parking_group = (
+#             "parking_group"
+#         )
 
-#         self.slot_group = "slots"
+#         self.slots_group = (
+#             "slots_group"
+#         )
 
-#         self.vehicle_group = "vehicles"
+#         self.vehicles_group = (
+#             "vehicles_group"
+#         )
 
-#         self.admin_group = "admins"
+#         self.admin_group = (
+#             "admin_group"
+#         )
 
 #         # =============================================
 #         # JOIN COMMON GROUPS
 #         # =============================================
 
 #         await self.channel_layer.group_add(
+
 #             self.parking_group,
-#             self.channel_name,
+
+#             self.channel_name
 #         )
 
 #         await self.channel_layer.group_add(
-#             self.slot_group,
-#             self.channel_name,
+
+#             self.slots_group,
+
+#             self.channel_name
 #         )
 
 #         await self.channel_layer.group_add(
-#             self.vehicle_group,
-#             self.channel_name,
+
+#             self.vehicles_group,
+
+#             self.channel_name
 #         )
 
 #         # =============================================
-#         # ADMIN EXTRA GROUP
+#         # ADMIN GROUP
 #         # =============================================
 
 #         if self.is_admin:
 
 #             await self.channel_layer.group_add(
+
 #                 self.admin_group,
-#                 self.channel_name,
+
+#                 self.channel_name
 #             )
 
 #         # =============================================
@@ -234,8 +120,33 @@ class ParkingConsumer(
 
 #         await self.accept()
 
+#         # =============================================
+#         # SUCCESS MESSAGE
+#         # =============================================
+
+#         await self.send(
+
+#             text_data=json.dumps({
+
+#                 "type":
+#                     "connection",
+
+#                 "message":
+#                     "WebSocket Connected",
+
+#                 "user":
+#                     self.user.username,
+
+#                 "admin":
+#                     self.is_admin,
+#             })
+#         )
+
 #         print(
-#             f"✅ WebSocket connected: {user.username}"
+
+#             f"✅ WebSocket connected: "
+
+#             f"{self.user.username}"
 #         )
 
 #     # =================================================
@@ -247,34 +158,64 @@ class ParkingConsumer(
 #         close_code
 #     ):
 
-#         await self.channel_layer.group_discard(
-#             self.parking_group,
-#             self.channel_name,
-#         )
+#         try:
 
-#         await self.channel_layer.group_discard(
-#             self.slot_group,
-#             self.channel_name,
-#         )
-
-#         await self.channel_layer.group_discard(
-#             self.vehicle_group,
-#             self.channel_name,
-#         )
-
-#         if self.is_admin:
+#             # =========================================
+#             # REMOVE COMMON GROUPS
+#             # =========================================
 
 #             await self.channel_layer.group_discard(
-#                 self.admin_group,
-#                 self.channel_name,
+
+#                 self.parking_group,
+
+#                 self.channel_name
+#             )
+
+#             await self.channel_layer.group_discard(
+
+#                 self.slots_group,
+
+#                 self.channel_name
+#             )
+
+#             await self.channel_layer.group_discard(
+
+#                 self.vehicles_group,
+
+#                 self.channel_name
+#             )
+
+#             # =========================================
+#             # REMOVE ADMIN GROUP
+#             # =========================================
+
+#             if self.is_admin:
+
+#                 await self.channel_layer.group_discard(
+
+#                     self.admin_group,
+
+#                     self.channel_name
+#                 )
+
+#         except Exception as error:
+
+#             print(
+
+#                 "Disconnect error:",
+
+#                 error
 #             )
 
 #         print(
-#             "❌ WebSocket disconnected"
+
+#             f"❌ WebSocket disconnected: "
+
+#             f"{close_code}"
 #         )
 
 #     # =================================================
-#     # RECEIVE FROM FRONTEND
+#     # RECEIVE MESSAGE
 #     # =================================================
 
 #     async def receive(
@@ -292,6 +233,13 @@ class ParkingConsumer(
 #                 "type"
 #             )
 
+#             print(
+
+#                 "Received:",
+
+#                 data
+#             )
+
 #             # =========================================
 #             # PING
 #             # =========================================
@@ -299,6 +247,7 @@ class ParkingConsumer(
 #             if message_type == "ping":
 
 #                 await self.send(
+
 #                     text_data=json.dumps({
 
 #                         "type":
@@ -306,28 +255,43 @@ class ParkingConsumer(
 #                     })
 #                 )
 
+#                 return
+
 #             # =========================================
 #             # ECHO
 #             # =========================================
 
-#             else:
+#             await self.send(
 
-#                 await self.send(
-#                     text_data=json.dumps({
+#                 text_data=json.dumps({
 
-#                         "type":
-#                             "echo",
+#                     "type":
+#                         "echo",
 
-#                         "message":
-#                             data,
-#                     })
-#                 )
+#                     "message":
+#                         data,
+#                 })
+#             )
 
-#         except Exception as e:
+#         except Exception as error:
 
 #             print(
-#                 "❌ WebSocket receive error:",
-#                 e
+
+#                 "Receive error:",
+
+#                 error
+#             )
+
+#             await self.send(
+
+#                 text_data=json.dumps({
+
+#                     "type":
+#                         "error",
+
+#                     "message":
+#                         str(error),
+#                 })
 #             )
 
 #     # =================================================
@@ -340,13 +304,17 @@ class ParkingConsumer(
 #     ):
 
 #         await self.send(
+
 #             text_data=json.dumps({
 
 #                 "type":
 #                     "slot_update",
 
 #                 "data":
-#                     event["data"],
+#                     event.get(
+#                         "data",
+#                         {}
+#                     ),
 #             })
 #         )
 
@@ -360,13 +328,17 @@ class ParkingConsumer(
 #     ):
 
 #         await self.send(
+
 #             text_data=json.dumps({
 
 #                 "type":
 #                     "vehicle_update",
 
 #                 "data":
-#                     event["data"],
+#                     event.get(
+#                         "data",
+#                         {}
+#                     ),
 #             })
 #         )
 
@@ -380,13 +352,17 @@ class ParkingConsumer(
 #     ):
 
 #         await self.send(
+
 #             text_data=json.dumps({
 
 #                 "type":
 #                     "parking_update",
 
 #                 "data":
-#                     event["data"],
+#                     event.get(
+#                         "data",
+#                         {}
+#                     ),
 #             })
 #         )
 
@@ -402,103 +378,270 @@ class ParkingConsumer(
 #         if self.is_admin:
 
 #             await self.send(
+
 #                 text_data=json.dumps({
 
 #                     "type":
 #                         "admin_alert",
 
 #                     "data":
-#                         event["data"],
+#                         event.get(
+#                             "data",
+#                             {}
+#                         ),
 #                 })
-#             )
+#             )  
 
 
 
 
 
+import json
+from urllib.parse import parse_qs
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+from rest_framework_simplejwt.tokens import AccessToken
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
+# =====================================================
+# PARKING CONSUMER
+# =====================================================
 
+class ParkingConsumer(
+    AsyncWebsocketConsumer
+):
 
+    # =================================================
+    # CONNECT
+    # =================================================
 
-# import json
-# from channels.generic.websocket import AsyncWebsocketConsumer
+    async def connect(self):
 
+        self.user = None
+        self.is_admin = False
 
-# class SlotsConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         # 🔐 Allow only authenticated users
-#         if self.scope["user"].is_anonymous:
-#             await self.close()
-#             return
+        self.parking_group = None
+        self.slots_group = None
+        self.vehicles_group = None
+        self.admin_group = None
 
-#         # =====================================================
-#         # Detect if admin or user socket
-#         # =====================================================
-#         path = self.scope.get("path", "")
+        try:
+            query_string = self.scope[
+                "query_string"
+            ].decode()
 
-#         if "admin" in path:
-#             self.group_name = "admin_slots_group"
-#         else:
-#             self.group_name = "slots_group"
+            token = parse_qs(
+                query_string
+            ).get("token", [None])[0]
 
-#         await self.channel_layer.group_add(self.group_name, self.channel_name)
-#         await self.accept()
+            if not token:
+                print(
+                    "❌ No WebSocket token"
+                )
+                await self.close()
+                return
 
-#     async def disconnect(self, close_code):
-#         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            access_token = AccessToken(
+                token
+            )
 
-#     # Original slot update
-#     async def send_slot_update(self, event):
-#         await self.send(text_data=json.dumps(event["data"]))
+            user_id = access_token[
+                "user_id"
+            ]
 
-#     # 🔹 Added: Lightweight refresh signal
-#     async def refresh_slots(self, event):
-#         await self.send(text_data=json.dumps(event["data"]))
+            self.user = await User.objects.aget(
+                id=user_id
+            )
 
+            self.is_admin = (
+                self.user.is_staff
+                or
+                self.user.is_superuser
+            )
 
-# class VehicleConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         if self.scope["user"].is_anonymous:
-#             await self.close()
-#             return
+            # GROUPS
+            self.parking_group = (
+                "parking_group"
+            )
 
-#         # =====================================================
-#         # Detect if admin or user socket
-#         # =====================================================
-#         path = self.scope.get("path", "")
+            self.slots_group = (
+                "slots_group"
+            )
 
-#         if "admin" in path:
-#             self.group_name = "admin_vehicles_group"
-#         else:
-#             self.group_name = "vehicles_group"
+            self.vehicles_group = (
+                "vehicles_group"
+            )
 
-#         await self.channel_layer.group_add(self.group_name, self.channel_name)
-#         await self.accept()
+            self.admin_group = (
+                "admin_group"
+            )
 
-#         # 🔹 Admin receives full GPS snapshot on connect
-#         if "admin" in path:
-#             try:
-#                 from .utils_ws import broadcast_all_vehicle_positions
-#                 broadcast_all_vehicle_positions()
-#             except Exception:
-#                 pass
+            # JOIN GROUPS
+            await self.channel_layer.group_add(
+                self.parking_group,
+                self.channel_name
+            )
 
-#     async def disconnect(self, close_code):
-#         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            await self.channel_layer.group_add(
+                self.slots_group,
+                self.channel_name
+            )
 
-#     # Original live position
-#     async def send_vehicle_update(self, event):
-#         await self.send(text_data=json.dumps(event["data"]))
+            await self.channel_layer.group_add(
+                self.vehicles_group,
+                self.channel_name
+            )
 
-#     # 🔹 Added: Admin initial snapshot
-#     async def vehicle_snapshot(self, event):
-#         await self.send(text_data=json.dumps(event["data"]))
+            if self.is_admin:
+                await self.channel_layer.group_add(
+                    self.admin_group,
+                    self.channel_name
+                )
 
+            await self.accept()
 
+            await self.send(
+                text_data=json.dumps({
+                    "type":
+                        "connection",
+                    "message":
+                        "WebSocket Connected",
+                    "user":
+                        self.user.username,
+                    "admin":
+                        self.is_admin,
+                })
+            )
 
+            print(
+                f"✅ WebSocket connected: {self.user.username}"
+            )
 
+        except Exception as error:
+            print(
+                f"WebSocket JWT auth failed: {str(error)}"
+            )
+            await self.close()
 
+    # =================================================
+    # DISCONNECT
+    # =================================================
 
+    async def disconnect(
+        self,
+        close_code
+    ):
 
+        try:
 
+            if self.parking_group:
+                await self.channel_layer.group_discard(
+                    self.parking_group,
+                    self.channel_name
+                )
+
+            if self.slots_group:
+                await self.channel_layer.group_discard(
+                    self.slots_group,
+                    self.channel_name
+                )
+
+            if self.vehicles_group:
+                await self.channel_layer.group_discard(
+                    self.vehicles_group,
+                    self.channel_name
+                )
+
+            if self.admin_group and self.is_admin:
+                await self.channel_layer.group_discard(
+                    self.admin_group,
+                    self.channel_name
+                )
+
+        except Exception as error:
+            print(
+                f"Disconnect error: {str(error)}"
+            )
+
+        print(
+            f"❌ WebSocket disconnected: {close_code}"
+        )
+
+    # =================================================
+    # RECEIVE
+    # =================================================
+
+    async def receive(
+        self,
+        text_data
+    ):
+
+        try:
+            data = json.loads(
+                text_data
+            )
+
+            if data.get("type") == "ping":
+
+                await self.send(
+                    text_data=json.dumps({
+                        "type": "pong"
+                    })
+                )
+                return
+
+            await self.send(
+                text_data=json.dumps({
+                    "type": "echo",
+                    "message": data,
+                })
+            )
+
+        except Exception as error:
+
+            await self.send(
+                text_data=json.dumps({
+                    "type": "error",
+                    "message": str(error),
+                })
+            )
+
+    # =================================================
+    # EVENTS
+    # =================================================
+
+    async def slot_update(
+        self,
+        event
+    ):
+        await self.send(
+            text_data=json.dumps(event)
+        )
+
+    async def vehicle_update(
+        self,
+        event
+    ):
+        await self.send(
+            text_data=json.dumps(event)
+        )
+
+    async def parking_update(
+        self,
+        event
+    ):
+        await self.send(
+            text_data=json.dumps(event)
+        )
+
+    async def admin_alert(
+        self,
+        event
+    ):
+        if self.is_admin:
+            await self.send(
+                text_data=json.dumps(event)
+            )

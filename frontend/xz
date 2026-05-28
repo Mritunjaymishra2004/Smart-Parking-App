@@ -1,0 +1,680 @@
+[text](src/api/api.js)
+[text](src/api/axios.js)
+![alt text](src/assets/bg-dashboard.jpg)
+![alt text](src/assets/logo.png)
+![alt text](src/assets/Map.png)
+[text](src/components/admin/AdminSessionsPanel.jsx)
+[text](src/components/admin/BookingManager.jsx)
+[text](src/components/admin/DevicePanel.jsx)
+[text](src/components/admin/OccupancyRadar.jsx)
+[text](src/components/admin/RevenueChart.jsx)
+[text](src/components/admin/RevenuePanel.jsx)
+[text](src/components/admin/SlotHeatmap.jsx)
+[text](src/components/admin/SlotManager.jsx)
+[text](src/components/admin/ViolationsPanel.jsx)
+[text](src/components/charts/BookingTrendChart.jsx)
+[text](src/components/charts/OccupancyChart.jsx)
+[text](src/components/charts/RevenueChart.jsx)
+[text](src/components/charts/SlotStatusPieChart.jsx)
+[text](src/components/common/DashboardBackground.jsx)
+[text](src/components/common/DashboardLayout.jsx)
+[text](src/components/common/Navbar.jsx)
+[text](src/components/common/ProfileMenu.jsx)
+[text](src/components/common/Sidebar.jsx)
+[text](src/components/common/SkeletonCard.jsx)
+[text](src/components/dashboard/SlotsPanel.jsx)
+[text](src/components/dashboard/StatsCard.jsx)
+[text](src/components/dashboard/VehiclesPanel.jsx)
+[text](src/components/map/HeatmapLayer.jsx)
+[text](src/components/map/LiveParkingMap.jsx)
+[text](src/components/map/VehicleTrails.jsx)
+[text](src/components/map/ViolationLayer.jsx)
+[text](src/components/notifications/NotificationDropdown.jsx)
+[text](src/components/profile/ProfileDropdown.jsx)
+[text](src/components/search/GlobalSearch.jsx)
+[text](src/components/ui/Button.jsx)
+[text](src/components/ui/Card.jsx)
+[text](src/components/ui/CardSkeleton.jsx)
+[text](src/components/ui/ChartSkeleton.jsx)
+[text](src/components/ui/ConfirmModal.jsx)
+[text](src/components/ui/EmptyState.jsx)
+[text](src/components/ui/Loader.jsx)
+[text](src/components/ui/Modal.jsx)
+[text](src/components/ui/SearchBar.jsx)
+[text](src/components/ui/StatCard.jsx)
+[text](src/components/ui/StatusBadge.jsx)
+[text](src/components/ui/Table.jsx)
+[text](src/components/ui/TableSkeleton.jsx)
+[text](src/components/ui/ThemeToggle.jsx)
+[text](src/components/user/VehiclePickerModal.jsx)
+[text](src/components/vehicles/VehicleCard.jsx)
+[text](src/components/vehicles/VehicleForm.jsx)
+[text](src/components/vehicles/VehicleHistory.jsx)
+[text](src/components/vehicles/VehicleQRCode.jsx)
+[text](src/components/vehicles/VehicleTracker.jsx)
+[text](src/components/EntryExitPanel.jsx)
+[text](src/components/ProtectedRoute.jsx)
+[text](src/context/AuthContext.jsx)
+[text](src/context/NotificationContext.jsx)
+[text](src/context/ParkingContext.jsx)
+[text](src/context/ThemeContext.jsx)
+[text](<src/hooks/useAuth.js>)
+[text](src/hooks/useParkingData.js)
+[text](src/pages/admin/AdminDashboard.jsx)
+[text](src/pages/admin/AdminLiveMap.jsx)
+[text](src/pages/admin/AdminViolations.jsx)
+[text](src/pages/admin/Analytics.jsx)
+[text](src/pages/admin/BookingsPanel.jsx)
+[text](src/pages/admin/LiveMap.jsx)
+[text](src/pages/admin/ParkingLots.jsx)
+[text](src/pages/admin/PaymentsPanel.jsx)
+[text](src/pages/admin/Reports.jsx)
+[text](src/pages/admin/Settings.jsx)
+[text](src/pages/admin/SlotManager.jsx)
+[text](src/pages/admin/UserManagement.jsx)
+[text](src/pages/admin/UsersPanel.jsx)
+[text](src/pages/auth/ForgotPassword.jsx)
+[text](src/pages/auth/Login.jsx)
+[text](src/pages/auth/ResetPassword.jsx)
+[text](src/pages/auth/ResetPassword.jsx)
+[text](src/pages/auth/Signup.jsx)
+[text](src/pages/booking/BookSlot.jsx)
+[text](src/pages/booking/MyBookings.jsx)
+[text](src/pages/gate/GateScanner.jsx)
+[text](src/pages/settings/AdminSettings.jsx)
+[text](src/pages/settings/CompanySettings.jsx)
+[text](src/pages/settings/NotificationSettings.jsx)
+[text](src/pages/settings/ParkingSettings.jsx)
+[text](src/pages/settings/SecuritySettings.jsx)
+[text](src/pages/settings/ThemeSettings.jsx)
+[text](src/pages/settings/UserSettings.jsx)
+[text](src/pages/user/Payment.jsx)
+[text](src/pages/user/Slots.jsx)
+[text](src/pages/user/UserDashboard.jsx)
+[text](src/pages/vehicles/VehicleManagement.jsx)
+[text](src/pages/Dashboard.jsx)
+[text](src/pages/NavigationPage.jsx)
+[text](src/pages/PaymentPage.jsx)
+[text](src/pages/Profile.jsx)
+[text](src/pages/PublicDashboard.jsx)
+[text](src/routes/adminRoutes.jsx)
+[text](src/routes/AppRoutes.jsx)
+[text](src/routes/index.jsx)
+[text](src/routes/publicRoutes.jsx)
+[text](src/routes/userRoutes.jsx)
+[text](src/services/admin.js)
+[text](src/services/analyticsService.js)
+[text](src/services/api.js)
+[text](src/services/apiParking.js)
+[text](src/services/authService.js)
+[text](src/services/parkingService.js)
+[text](src/utils/exportCSV.js)
+[text](src/utils/exportPDF.js)
+[text](src/utils/leafletIcon.js)
+[text](src/utils/parkingEngine.js)
+[text](src/utils/socket.js)
+[text](src/websocket/socketEvents.js)
+[text](src/websocket/WebSocketContext.jsx)
+[text](src/websocket/websocketService.js)
+[text](src/App.css)
+[text](src/App.css)
+[text](src/App.jsx)
+[text](src/index.css)
+[text](src/main.jsx)
+
+
+
+
+
+
+D:\FINAL YEAR PROJECT\SMART-PARKING-SYSTEM\FRONTEND\SRC
+│   App.css
+│   App.jsx
+│   index.css
+│   main.jsx
+│   
+├───api
+│   │   axios.js
+│   │   
+│   └───services
+├───assets
+│   │   bg-dashboard.jpg
+│   │   logo.png
+│   │   Map.png
+│   │   react.svg
+│   │   
+│   └───images
+│           dashboard-bg.jpg
+│           
+├───components
+│   │   ConfirmModal.jsx
+│   │   DataTable.jsx
+│   │   EntryExitPanel.jsx
+│   │   ErrorBoundry.jsx
+│   │   index.jsx
+│   │   PublicDashboard.jsx
+│   │   SlotManager.jsx
+│   │   
+│   ├───admin
+│   │       AdminViolations.jsx
+│   │       BookingsPanel.jsx
+│   │       LiveMap.jsx
+│   │       ParkingLots.jsx
+│   │       PaymentsPanel.jsx
+│   │       Settings.jsx
+│   │       UsersPanel.jsx
+│   │       
+│   ├───common
+│   │       SkeletonCard.jsx
+│   │       
+│   ├───constants
+│   │       roles.js
+│   │       routes.js
+│   │       socketEvents.js
+│   │       theme.js
+│   │       
+│   ├───dashboard
+│   │       SlotsPanel.jsx
+│   │       StatsCard.jsx
+│   │       VehiclesPanel.jsx
+│   │       
+│   ├───services
+│   │       adminApi.js
+│   │       analyticsApi.js
+│   │       apiParking.js
+│   │       authService.js
+│   │       parkingApi.js
+│   │       
+│   ├───settings
+│   │       CompanySettings.jsx
+│   │       NotificationSettings.jsx
+│   │       ParkingSettings.jsx
+│   │       SecuritySettings.jsx
+│   │       ThemeSettings.jsx
+│   │       
+│   ├───ui
+│   │       CardSkeleton.jsx
+│   │       ChartSkeleton.jsx
+│   │       TableSkeleton.jsx
+│   │       
+│   ├───user
+│   │       VehiclePickerModal.jsx
+│   │       
+│   └───utils
+│           permissions.js
+│           
+├───context
+│       AuthContext.jsx
+│       NotificationContext.jsx
+│       ParkingContext.jsx
+│       ThemeContext.jsx
+│       WebSocketContext.jsx
+│       
+├───hooks
+│       use Auth.js
+│       useDebounce.js
+│       useParkingData.js
+│       useWebSocket.js
+│       
+├───modules
+│   ├───admin
+│   │   ├───components
+│   │   │       AdminSessionsPanel.jsx
+│   │   │       BookingManager.jsx
+│   │   │       DevicePanel.jsx
+│   │   │       OccupancyRadar.jsx
+│   │   │       RevenuePanel.jsx
+│   │   │       SlotHeatmap.jsx
+│   │   │       SlotManagerPanel.jsx
+│   │   │       ViolationsPanel.jsx
+│   │   │       
+│   │   └───pages
+│   │           AdminDashboard.jsx
+│   │           AdminLiveMap.jsx
+│   │           Analytics.jsx
+│   │           BookingsPanel.jsx
+│   │           ParkingLots.jsx
+│   │           PaymentsPanel.jsx
+│   │           Reports.jsx
+│   │           Settings.jsx
+│   │           UserManagement.jsx
+│   │           Violations.jsx
+│   │           
+│   ├───analytics
+│   │   └───components
+│   │           BookingTrendChart.jsx
+│   │           OccupancyChart.jsx
+│   │           RevenueChart.jsx
+│   │           SlotStatusPieChart.jsx
+│   │           
+│   ├───auth
+│   │   └───pages
+│   │           ForgotPassword.jsx
+│   │           Login.jsx
+│   │           ResetPassword.jsx
+│   │           Signup.jsx
+│   │           
+│   ├───booking
+│   │   └───pages
+│   │           BookSlot.jsx
+│   │           MyBookings.jsx
+│   │           
+│   ├───gate
+│   │   ├───components
+│   │   │       EntryExitPanel.jsx
+│   │   │       
+│   │   └───pages
+│   │           GateScanner.jsx
+│   │           
+│   ├───map
+│   │   ├───components
+│   │   │       HeatmapLayer.jsx
+│   │   │       LiveParkingMap.jsx
+│   │   │       VehicleTrails.jsx
+│   │   │       ViolationLayer.jsx
+│   │   │       
+│   │   └───pages
+│   │           LiveMap.jsx
+│   │           
+│   ├───notifications
+│   │   └───components
+│   │           NotificationCenter.jsx
+│   │           
+│   ├───profile
+│   │   ├───components
+│   │   │       ProfileDropdown.jsx
+│   │   │       
+│   │   └───pages
+│   │           Profile.jsx
+│   │           
+│   ├───settings
+│   │   └───pages
+│   │           AdminSettings.jsx
+│   │           CompanySettings.jsx
+│   │           NotificationSettings.jsx
+│   │           ParkingSettings.jsx
+│   │           SecuritySettings.jsx
+│   │           ThemeSettings.jsx
+│   │           UserSettings.jsx
+│   │           
+│   ├───user
+│   │   ├───components
+│   │   │       VehiclePickerModal.jsx
+│   │   │       
+│   │   └───pages
+│   │           Payment.jsx
+│   │           Settings.jsx
+│   │           Slots.jsx
+│   │           UserDashboard.jsx
+│   │           
+│   └───vehicles
+│       ├───components
+│       │       VehicleCard.jsx
+│       │       VehicleForm.jsx
+│       │       VehicleHistory.jsx
+│       │       VehicleQRCode.jsx
+│       │       VehicleTracker.jsx
+│       │       
+│       └───pages
+│               VehicleManagement.jsx
+│               
+├───routes
+│       adminRoutes.jsx
+│       AppRoutes.jsx
+│       ProtectedRoute.jsx
+│       publicRoutes.jsx
+│       userRoutes.jsx
+│       
+├───services
+│       api.js
+│       
+├───shared
+│   ├───components
+│   │   ├───common
+│   │   │       DashboardBackground.jsx
+│   │   │       Navbar.jsx
+│   │   │       ProfileMenu.jsx
+│   │   │       Sidebar.jsx
+│   │   │       ThemeSwitcher.jsx
+│   │   │       
+│   │   ├───notifications
+│   │   │       NotificationDropdown.jsx
+│   │   │       
+│   │   ├───panels
+│   │   │       SlotsPanel.jsx
+│   │   │       StatsPanel.jsx
+│   │   │       VehiclesPanel.jsx
+│   │   │       
+│   │   └───search
+│   │           GlobalSearch.jsx
+│   │           
+│   ├───layouts
+│   │       AuthLayout.jsx
+│   │       DashboardLayout.jsx
+│   │       MainLayout.jsx
+│   │       
+│   └───ui
+│           Button.jsx
+│           Card.jsx
+│           CardSkeleton.jsx
+│           ChartSkeleton.jsx
+│           ConfirmModal.jsx
+│           EmptyState.jsx
+│           Loader.jsx
+│           Modal.jsx
+│           SearchBar.jsx
+│           StatCard.jsx
+│           StatusBadge.jsx
+│           Table.jsx
+│           TableSkeleton.jsx
+│           ThemeToggle.jsx
+│           
+├───utils
+│       exportCSV.js
+│       exportPDF.js
+│       formatCurrency.js
+│       leafletIcon.js
+│       parkingEngine.js
+│       socket.js
+│       validators.js
+│       
+└───websocket
+        websocketService.js
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+src/
+
+├── api/
+│
+│   ├── axios.js
+│   ├── authApi.js
+│   ├── adminApi.js
+│   ├── analyticsApi.js
+│   ├── bookingApi.js
+│   ├── parkingApi.js
+│   ├── paymentApi.js
+│   └── vehicleApi.js
+│
+
+├── assets/
+│
+│   ├── images/
+│   │
+│   │   ├── bg-dashboard.jpg
+│   │   ├── logo.png
+│   │   └── map.png
+│   │
+│   ├── icons/
+│   │
+│   └── animations/
+│
+
+├── modules/
+│
+│   ├── admin/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── AdminLiveMap.jsx
+│   │   │   ├── Analytics.jsx
+│   │   │   ├── BookingsPanel.jsx
+│   │   │   ├── ParkingLots.jsx
+│   │   │   ├── PaymentsPanel.jsx
+│   │   │   ├── Reports.jsx
+│   │   │   ├── Settings.jsx
+│   │   │   ├── UserManagement.jsx
+│   │   │   └── Violations.jsx
+│   │   │
+│   │   ├── components/
+│   │   │
+│   │   │   ├── AdminSessionsPanel.jsx
+│   │   │   ├── BookingManager.jsx
+│   │   │   ├── DevicePanel.jsx
+│   │   │   ├── OccupancyRadar.jsx
+│   │   │   ├── RevenuePanel.jsx
+│   │   │   ├── SlotHeatmap.jsx
+│   │   │   ├── SlotManagerPanel.jsx
+│   │   │   └── ViolationsPanel.jsx
+│   │   │
+│   │   ├── hooks/
+│   │   │
+│   │   └── services/
+│   │
+│   ├── analytics/
+│   │
+│   │   ├── components/
+│   │   │
+│   │   │   ├── BookingTrendChart.jsx
+│   │   │   ├── OccupancyChart.jsx
+│   │   │   ├── RevenueChart.jsx
+│   │   │   └── SlotStatusPieChart.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   ├── auth/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   ├── ForgotPassword.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── ResetPassword.jsx
+│   │   │   └── Signup.jsx
+│   │   │
+│   │   ├── hooks/
+│   │   │
+│   │   └── services/
+│   │
+│   ├── booking/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   ├── BookSlot.jsx
+│   │   │   └── MyBookings.jsx
+│   │   │
+│   │   ├── hooks/
+│   │   │
+│   │   └── services/
+│   │
+│   ├── gate/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   └── GateScanner.jsx
+│   │   │
+│   │   ├── components/
+│   │   │
+│   │   │   └── EntryExitPanel.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   ├── map/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   └── LiveMap.jsx
+│   │   │
+│   │   ├── components/
+│   │   │
+│   │   │   ├── HeatmapLayer.jsx
+│   │   │   ├── LiveParkingMap.jsx
+│   │   │   ├── VehicleTrails.jsx
+│   │   │   └── ViolationLayer.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   ├── notifications/
+│   │
+│   │   ├── components/
+│   │   │
+│   │   │   └── NotificationCenter.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   ├── profile/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   └── Profile.jsx
+│   │   │
+│   │   ├── components/
+│   │   │
+│   │   │   └── ProfileDropdown.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   ├── settings/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   ├── AdminSettings.jsx
+│   │   │   ├── CompanySettings.jsx
+│   │   │   ├── NotificationSettings.jsx
+│   │   │   ├── ParkingSettings.jsx
+│   │   │   ├── SecuritySettings.jsx
+│   │   │   ├── ThemeSettings.jsx
+│   │   │   └── UserSettings.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   ├── user/
+│   │
+│   │   ├── pages/
+│   │   │
+│   │   │   ├── Payment.jsx
+│   │   │   ├── Slots.jsx
+│   │   │   └── UserDashboard.jsx
+│   │   │
+│   │   ├── components/
+│   │   │
+│   │   │   └── VehiclePickerModal.jsx
+│   │   │
+│   │   └── services/
+│   │
+│   └── vehicles/
+│
+│       ├── pages/
+│       │
+│       │   └── VehicleManagement.jsx
+│       │
+│       ├── components/
+│       │
+│       │   ├── VehicleCard.jsx
+│       │   ├── VehicleForm.jsx
+│       │   ├── VehicleHistory.jsx
+│       │   ├── VehicleQRCode.jsx
+│       │   └── VehicleTracker.jsx
+│       │
+│       └── services/
+│
+
+├── shared/
+│
+│   ├── components/
+│   │
+│   │   ├── common/
+│   │   │
+│   │   │   ├── DashboardBackground.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── ProfileMenu.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   └── ThemeSwitcher.jsx
+│   │   │
+│   │   ├── notifications/
+│   │   │
+│   │   │   └── NotificationDropdown.jsx
+│   │   │
+│   │   ├── search/
+│   │   │
+│   │   │   └── GlobalSearch.jsx
+│   │   │
+│   │   └── panels/
+│   │
+│   │       ├── SlotsPanel.jsx
+│   │       ├── StatsPanel.jsx
+│   │       └── VehiclesPanel.jsx
+│   │
+│   ├── layouts/
+│   │
+│   │   ├── DashboardLayout.jsx
+│   │   ├── AuthLayout.jsx
+│   │   └── MainLayout.jsx
+│   │
+│   └── ui/
+│
+│       ├── Button.jsx
+│       ├── Card.jsx
+│       ├── CardSkeleton.jsx
+│       ├── ChartSkeleton.jsx
+│       ├── ConfirmModal.jsx
+│       ├── EmptyState.jsx
+│       ├── Loader.jsx
+│       ├── Modal.jsx
+│       ├── SearchBar.jsx
+│       ├── StatCard.jsx
+│       ├── StatusBadge.jsx
+│       ├── Table.jsx
+│       ├── TableSkeleton.jsx
+│       └── ThemeToggle.jsx
+│
+
+├── context/
+│
+│   ├── AuthContext.jsx
+│   ├── NotificationContext.jsx
+│   ├── ParkingContext.jsx
+│   ├── ThemeContext.jsx
+│   └── WebSocketContext.jsx
+│
+
+├── hooks/
+│
+│   ├── useAuth.js
+│   ├── useDebounce.js
+│   ├── useParkingData.js
+│   └── useWebSocket.js
+│
+
+├── routes/
+│
+│   ├── adminRoutes.jsx
+│   ├── AppRoutes.jsx
+│   ├── ProtectedRoute.jsx
+│   ├── publicRoutes.jsx
+│   └── userRoutes.jsx
+│
+
+├── utils/
+│
+│   ├── exportCSV.js
+│   ├── exportPDF.js
+│   ├── formatCurrency.js
+│   ├── leafletIcon.js
+│   ├── parkingEngine.js
+│   ├── socket.js
+│   └── validators.js
+│
+
+├── websocket/
+│
+│   ├── socketEvents.js
+│   ├── websocketService.js
+│   └── websocketHelpers.js
+│
+
+├── App.css
+├── App.jsx
+├── index.css
+└── main.jsx

@@ -2,41 +2,67 @@
 ASGI config for backend project.
 
 Supports:
+
 - HTTP via Django
-- WebSocket via Django Channels with JWT authentication
+- WebSocket via Django Channels
+- JWT Authentication
+- Real-time Smart Parking Updates
 """
 
 import os
+import django
 
-from django.core.asgi import get_asgi_application
+from django.core.asgi import (
+    get_asgi_application
+)
 
 from channels.routing import (
+
     ProtocolTypeRouter,
+
     URLRouter,
 )
 
 from channels.auth import (
-    AuthMiddlewareStack,
+    AuthMiddlewareStack
 )
 
 from api.routing import (
-    websocket_urlpatterns,
+    websocket_urlpatterns
 )
+
+from api.middleware import (
+    JWTAuthMiddleware
+)
+
 
 # =====================================================
 # DJANGO SETTINGS
 # =====================================================
 
 os.environ.setdefault(
+
     "DJANGO_SETTINGS_MODULE",
+
     "backend.settings"
 )
+
+
+# =====================================================
+# DJANGO SETUP
+# =====================================================
+
+django.setup()
+
 
 # =====================================================
 # DJANGO ASGI APP
 # =====================================================
 
-django_asgi_app = get_asgi_application()
+django_asgi_app = (
+    get_asgi_application()
+)
+
 
 # =====================================================
 # MAIN APPLICATION
@@ -44,81 +70,27 @@ django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
 
-    # ==============================================
+    # =================================================
     # HTTP
-    # ==============================================
+    # =================================================
 
-    "http": django_asgi_app,
+    "http":
 
-    # ==============================================
+        django_asgi_app,
+
+    # =================================================
     # WEBSOCKET
-    # ==============================================
+    # =================================================
 
     "websocket":
 
-        AuthMiddlewareStack(
+        JWTAuthMiddleware(
 
-            URLRouter(
-                websocket_urlpatterns
+            AuthMiddlewareStack(
+
+                URLRouter(
+                    websocket_urlpatterns
+                )
             )
         ),
 })
-
-
-
-
-
-
-
-
-
-
-
-# import os
-# import django
-# from django.core.asgi import get_asgi_application
-# from channels.routing import ProtocolTypeRouter, URLRouter
-# from channels.auth import AuthMiddlewareStack
-# from api.routing import websocket_urlpatterns
-# from api.middleware import JWTAuthMiddleware
-
-# # 🔹 Ensure correct Django settings are loaded
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
-
-# # 🔹 Setup Django before ASGI loads models
-# django.setup()
-
-# # 🔹 Django ASGI application
-# django_asgi_app = get_asgi_application()
-
-# # 🔹 Main ASGI router
-# application = ProtocolTypeRouter({
-#     # =====================================================
-#     # 🌐 HTTP (Django REST APIs & Admin)
-#     # =====================================================
-#     "http": django_asgi_app,
-
-#     # =====================================================
-#     # 🔌 WebSocket (JWT + Sessions + Channels)
-#     # =====================================================
-#     "websocket": JWTAuthMiddleware(
-#         AuthMiddlewareStack(
-#             URLRouter(websocket_urlpatterns)
-#         )
-#     ),
-# })
-
-
-# # from api.monitor import start_monitor
-# # application = ProtocolTypeRouter({
-# #     "http": django_asgi_app,
-# #     "websocket": JWTAuthMiddleware(
-# #         AuthMiddlewareStack(
-# #             URLRouter(websocket_urlpatterns)
-# #         )
-# #     ),
-# # })
-
-# # # 🚨 Start violation monitor
-# # start_monitor()
-

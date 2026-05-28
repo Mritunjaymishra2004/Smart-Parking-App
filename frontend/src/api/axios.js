@@ -2,17 +2,12 @@ import axios from "axios";
 
 
 // ======================================================
-// BASE URL
+// API URL
 // ======================================================
 
-const baseURL =
-
-  import.meta.env
-    .VITE_API_BASE_URL
-
-  ||
-
-  "http://localhost:8000/api/v1";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://127.0.0.1:8000/api/v1";
 
 
 // ======================================================
@@ -20,16 +15,16 @@ const baseURL =
 // ======================================================
 
 const api = axios.create({
-
-  baseURL,
-
-  timeout: 15000,
+  baseURL: API_BASE_URL,
 
   headers: {
-
     "Content-Type":
       "application/json",
   },
+
+  timeout: 15000,
+
+  withCredentials: false,
 });
 
 
@@ -37,137 +32,62 @@ const api = axios.create({
 // TOKEN HELPERS
 // ======================================================
 
-const getAccessToken =
-  () => {
+export const getAccessToken =
+  () =>
+    localStorage.getItem(
+      "access"
+    );
 
-    try {
+export const getRefreshToken =
+  () =>
+    localStorage.getItem(
+      "refresh"
+    );
 
-      return localStorage.getItem(
-        "access"
-      );
-
-    } catch {
-
-      return null;
-    }
-  };
-
-
-const getRefreshToken =
-  () => {
-
-    try {
-
-      return localStorage.getItem(
-        "refresh"
-      );
-
-    } catch {
-
-      return null;
-    }
-  };
-
-
-const setAccessToken =
+export const setAccessToken =
   (token) => {
-
-    try {
-
-      localStorage.setItem(
-        "access",
-        token
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Failed to save token",
-        error
-      );
-    }
+    localStorage.setItem(
+      "access",
+      token
+    );
   };
 
+export const setRefreshToken =
+  (token) => {
+    localStorage.setItem(
+      "refresh",
+      token
+    );
+  };
 
-const clearAuth =
+export const clearTokens =
   () => {
+    localStorage.removeItem(
+      "access"
+    );
 
-    try {
-
-      localStorage.removeItem(
-        "access"
-      );
-
-      localStorage.removeItem(
-        "refresh"
-      );
-
-      localStorage.removeItem(
-        "user"
-      );
-
-    } catch (error) {
-
-      console.error(
-        "Failed to clear auth",
-        error
-      );
-    }
+    localStorage.removeItem(
+      "refresh"
+    );
   };
 
 
 // ======================================================
-// SAFE LOGIN REDIRECT
+// REDIRECT
 // ======================================================
 
 const redirectToLogin =
   () => {
+    clearTokens();
 
     if (
-
       window.location.pathname !==
       "/login"
-
     ) {
-
-      window.location.replace(
-        "/login"
-      );
+      window.location.href =
+        "/login";
     }
   };
-
-
-// ======================================================
-// REQUEST INTERCEPTOR
-// ======================================================
-
-api.interceptors.request.use(
-
-  (config) => {
-
-    const accessToken =
-      getAccessToken();
-
-    // ==============================================
-    // AUTH HEADER
-    // ==============================================
-
-    if (accessToken) {
-
-      config.headers.Authorization =
-        `Bearer ${accessToken}`;
-    }
-
-    return config;
-  },
-
-  (error) => {
-
-    return Promise.reject(
-      error
-    );
-  }
-);
 
 
 // ======================================================
@@ -184,27 +104,15 @@ let failedQueue = [];
 // ======================================================
 
 const processQueue = (
-
   error,
-
   token = null
-
 ) => {
-
   failedQueue.forEach(
     (promise) => {
-
       if (error) {
-
-        promise.reject(
-          error
-        );
-
+        promise.reject(error);
       } else {
-
-        promise.resolve(
-          token
-        );
+        promise.resolve(token);
       }
     }
   );
@@ -214,39 +122,29 @@ const processQueue = (
 
 
 // ======================================================
-// REFRESH TOKEN
+// REQUEST INTERCEPTOR
 // ======================================================
 
-const refreshAccessToken =
-  async () => {
+api.interceptors.request.use(
+  (config) => {
+    const token =
+      getAccessToken();
 
-    const refreshToken =
-      getRefreshToken();
-
-    if (!refreshToken) {
-
-      throw new Error(
-        "No refresh token"
-      );
+    if (
+      token &&
+      token !== "undefined" &&
+      token !== "null"
+    ) {
+      config.headers.Authorization =
+        `Bearer ${token}`;
     }
 
-    const response =
-      await axios.post(
+    return config;
+  },
 
-        `${baseURL}/auth/refresh/`,
-
-        {
-          refresh:
-            refreshToken,
-        },
-
-        {
-          timeout: 10000,
-        }
-      );
-
-    return response.data.access;
-  };
+  (error) =>
+    Promise.reject(error)
+);
 
 
 // ======================================================
@@ -254,26 +152,19 @@ const refreshAccessToken =
 // ======================================================
 
 api.interceptors.response.use(
-
-  (response) => {
-
-    return response;
-  },
+  (response) => response,
 
   async (error) => {
 
-    const originalRequest =
-      error.config;
-
-
-    // ==============================================
-    // NO RESPONSE
-    // ==============================================
+    // ================================================
+    // NETWORK ERROR
+    // ================================================
 
     if (!error.response) {
 
-      console.warn(
-        "Backend unreachable"
+      console.error(
+        "Backend Connection Failed:",
+        error.message
       );
 
       return Promise.reject(
@@ -281,69 +172,92 @@ api.interceptors.response.use(
       );
     }
 
+    const originalRequest =
+      error.config;
 
-    // ==============================================
-    // TOKEN EXPIRED
-    // ==============================================
+
+    // ================================================
+    // REFRESH LOOP PREVENTION
+    // ================================================
 
     if (
-
-      error.response.status === 401 &&
-
-      !originalRequest._retry &&
-
-      !originalRequest.url.includes(
+      originalRequest.url?.includes(
         "/auth/refresh/"
       )
-
     ) {
+      redirectToLogin();
 
-      // ============================================
-      // WAIT FOR ACTIVE REFRESH
-      // ============================================
+      return Promise.reject(
+        error
+      );
+    }
+
+
+    // ================================================
+    // TOKEN REFRESH
+    // ================================================
+
+    if (
+      error.response.status ===
+        401 &&
+      !originalRequest._retry
+    ) {
 
       if (isRefreshing) {
 
         return new Promise(
-
           (
             resolve,
-
             reject
           ) => {
 
             failedQueue.push({
-
               resolve,
-
               reject,
             });
+
           }
+        ).then(
+          (token) => {
 
-        ).then((token) => {
+            originalRequest.headers.Authorization =
+              `Bearer ${token}`;
 
-          originalRequest.headers.Authorization =
-            `Bearer ${token}`;
-
-          return api(
-            originalRequest
-          );
-        });
+            return api(
+              originalRequest
+            );
+          }
+        );
       }
 
-
-      // ============================================
-      // START REFRESH
-      // ============================================
-
-      originalRequest._retry = true;
+      originalRequest._retry =
+        true;
 
       isRefreshing = true;
 
       try {
 
+        const refresh =
+          getRefreshToken();
+
+        if (!refresh) {
+          redirectToLogin();
+
+          return Promise.reject(
+            error
+          );
+        }
+
+        const response =
+          await axios.post(
+            `${API_BASE_URL}/auth/refresh/`,
+            {
+              refresh,
+            }
+          );
+
         const newAccess =
-          await refreshAccessToken();
+          response.data.access;
 
         setAccessToken(
           newAccess
@@ -352,29 +266,26 @@ api.interceptors.response.use(
         api.defaults.headers.common.Authorization =
           `Bearer ${newAccess}`;
 
-        originalRequest.headers.Authorization =
-          `Bearer ${newAccess}`;
-
         processQueue(
           null,
           newAccess
         );
 
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccess}`;
+
         return api(
           originalRequest
         );
 
-      } catch (refreshError) {
-
-        console.error(
-          "Refresh token expired"
-        );
+      } catch (
+        refreshError
+      ) {
 
         processQueue(
-          refreshError
+          refreshError,
+          null
         );
-
-        clearAuth();
 
         redirectToLogin();
 
@@ -388,51 +299,11 @@ api.interceptors.response.use(
       }
     }
 
-
-    // ==============================================
-    // FORBIDDEN
-    // ==============================================
-
-    if (
-
-      error.response.status === 403
-
-    ) {
-
-      console.warn(
-        "Permission denied"
-      );
-    }
-
-
-    // ==============================================
-    // SERVER ERROR
-    // ==============================================
-
-    if (
-
-      error.response.status >= 500
-
-    ) {
-
-      console.error(
-        "Internal server error"
-      );
-    }
-
     return Promise.reject(
       error
     );
   }
 );
-
-
-// ======================================================
-// CANCEL TOKEN
-// ======================================================
-
-export const cancelTokenSource =
-  axios.CancelToken.source;
 
 
 // ======================================================

@@ -1,78 +1,30 @@
 import axios from "axios";
 
-// ======================================================
-// BASE URL
-// ======================================================
-
 const api = axios.create({
-
-  baseURL:
-    "http://127.0.0.1:8000/api/v1",
+  baseURL: "/api/v1",
 
   headers: {
     "Content-Type":
       "application/json",
   },
 
+  timeout: 10000,
 });
 
-// ======================================================
-// REQUEST INTERCEPTOR
-// ======================================================
-
 api.interceptors.request.use(
-
   (config) => {
-
     const token =
       localStorage.getItem(
         "access"
       );
 
     if (token) {
-
       config.headers.Authorization =
         `Bearer ${token}`;
     }
 
     return config;
-  },
-
-  (error) =>
-    Promise.reject(error)
-);
-
-// ======================================================
-// RESPONSE INTERCEPTOR
-// ======================================================
-
-api.interceptors.response.use(
-
-  (response) => response,
-
-  (error) => {
-
-    // ==============================================
-    // AUTO LOGOUT ON 401
-    // ==============================================
-
-    if (
-      error.response?.status ===
-      401
-    ) {
-
-      localStorage.removeItem(
-        "access"
-      );
-
-      localStorage.removeItem(
-        "refresh"
-      );
-    }
-
-    return Promise.reject(error);
   }
 );
 
 export default api;
-

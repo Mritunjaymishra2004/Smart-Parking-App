@@ -34,6 +34,14 @@ from .serializers import (
 
 from .permissions import IsAdmin
 
+from django.shortcuts import redirect
+
+
+def google_login(request):
+    return redirect(
+        "/auth/login/google-oauth2/"
+    )
+
 
 # ===============================
 # SAFE WEBSOCKET IMPORT
@@ -107,49 +115,66 @@ def signup_view(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
+
     email = request.data.get("email")
     password = request.data.get("password")
 
     if not email or not password:
-        return Response({"error": "Email and password required"}, status=400)
+        return Response(
+            {"error": "Email and password required"},
+            status=400
+        )
 
-    user = User.objects.filter(email=email).first()
-    if not user:
-        return Response({"error": "User not found"}, status=400)
+    try:
+        user = User.objects.get(email=email)
 
-    user = authenticate(username=user.username, password=password)
-    if not user:
-        return Response({"error": "Invalid password"}, status=400)
+    except User.DoesNotExist:
+        return Response(
+            {"error": "User not found"},
+            status=400
+        )
 
-    profile, _ = Profile.objects.get_or_create(user=user)
-    refresh = RefreshToken.for_user(user)
+    auth_user = authenticate(
+        username=user.username,
+        password=password
+    )
+
+    if not auth_user:
+        return Response(
+            {"error": "Invalid password"},
+            status=400
+        )
+
+    profile, _ = Profile.objects.get_or_create(
+        user=auth_user,
+        defaults={
+            "role": "user",
+            "wallet_balance": Decimal("0.00"),
+        }
+    )
+
+    if not profile.role:
+        profile.role = (
+            "admin"
+            if auth_user.is_staff
+            else "user"
+        )
+        profile.save()
+
+    refresh = RefreshToken.for_user(auth_user)
 
     return Response({
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
 
-    "access":
-        str(refresh.access_token),
-
-    "refresh":
-        str(refresh),
-
-    "user": {
-
-        "id":
-            user.id,
-
-        "email":
-            user.email,
-
-        "name":
-            user.first_name,
-
-        "role":
-            profile.role,
-
-        "is_staff":
-            user.is_staff,
-    }
-})
+        "user": {
+            "id": auth_user.id,
+            "email": auth_user.email,
+            "name": auth_user.first_name,
+            "role": profile.role,
+            "is_staff": auth_user.is_staff,
+        }
+    })
 
 
 @api_view(["GET"])
